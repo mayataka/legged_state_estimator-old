@@ -1,7 +1,6 @@
 #ifndef LEGGED_STATE_ESTIMATOR_CONTACT_ESTIMATOR_HPP_
 #define LEGGED_STATE_ESTIMATOR_CONTACT_ESTIMATOR_HPP_
 
-#include <array>
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
@@ -63,10 +62,8 @@ public:
     non_contact_probability_ = 1.0;
   }
 
-  void update(const std::array<std::int16_t, 4>& force) {
-    for (int i=0; i<4; ++i) {
-      f_est_.coeffRef(i) = static_cast<Scalar>(force[i]) - f_bias_.coeff(i);
-    }
+  void update(const Vector4& f_raw) {
+    f_est_ = f_raw - f_bias_;
     win_filter_.update(f_est_);
     for (int i=0; i<4; ++i) {
       contact_probability_.coeffRef(i) 

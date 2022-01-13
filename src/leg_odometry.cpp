@@ -18,10 +18,12 @@ using Vector4f = types::Vector4<float>;
 using Vector3f = types::Vector3<float>;
 using Quaternionf = types::Quaternion<float>;
 
-template LegOdometry<double>::LegOdometry(
-    const std::string&, const std::array<int, 4>&, const double, const double);
-template LegOdometry<float>::LegOdometry(
-    const std::string&, const std::array<int, 4>&, const float, const float);
+template LegOdometry<double>::LegOdometry(const std::string&, 
+                                          const std::array<int, 4>&, 
+                                          const double, const double);
+template LegOdometry<float>::LegOdometry(const std::string&, 
+                                         const std::array<int, 4>&, 
+                                         const float, const float);
 
 template LegOdometry<double>::LegOdometry();
 template LegOdometry<float>::LegOdometry();
@@ -29,25 +31,19 @@ template LegOdometry<float>::LegOdometry();
 template LegOdometry<double>::~LegOdometry();
 template LegOdometry<float>::~LegOdometry();
 
-template void LegOdometry<double>::updateBaseStateEstimation(
-    const Quaterniond&, const Vector3d&, const Vector12d&, const Vector12d&, const Vector4d&);
-template void LegOdometry<float>::updateBaseStateEstimation(
-    const Quaternionf&, const Vector3f&, const Vector12f&, const Vector12f&, const Vector4f&);
+template void LegOdometry<double>::updateBaseStateEstimation(const Quaterniond&, const Vector3d&, 
+                                                             const Vector12d&, const Vector12d&, const Vector4d&);
+template void LegOdometry<float>::updateBaseStateEstimation(const Quaternionf&, const Vector3f&, 
+                                                            const Vector12f&, const Vector12f&, const Vector4f&);
 
-template void LegOdometry<double>::updateContactPositionEstimation(
-    const Vector3d&, const Vector4d&);
-template void LegOdometry<float>::updateContactPositionEstimation(
-    const Vector3f&, const Vector4f&);
+template void LegOdometry<double>::updateContactPositionEstimation(const Vector3d&, const Vector4d&);
+template void LegOdometry<float>::updateContactPositionEstimation(const Vector3f&, const Vector4f&);
 
-template void LegOdometry<double>::resetBaseStateEstimation(
-    const double, const double, const Vector4d&);
-template void LegOdometry<float>::resetBaseStateEstimation(
-    const float, const float, const Vector4f&);
+template void LegOdometry<double>::resetBaseStateEstimation(const double, const double, const Vector4d&);
+template void LegOdometry<float>::resetBaseStateEstimation(const float, const float, const Vector4f&);
 
-template void LegOdometry<double>::resetContactPositionEstimation(
-    const double, const double, const Vector4d&);
-template void LegOdometry<float>::resetContactPositionEstimation(
-    const float, const float, const Vector4f&);
+template void LegOdometry<double>::resetContactPositionEstimation(const double, const double, const Vector4d&);
+template void LegOdometry<float>::resetContactPositionEstimation(const float, const float, const Vector4f&);
 
 template const Vector3d& LegOdometry<double>::getBaseLinearVelocityEstimate() const;
 template const Vector3f& LegOdometry<float>::getBaseLinearVelocityEstimate() const;

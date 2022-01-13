@@ -26,7 +26,7 @@ public:
   Scalar contact_probability_beta0; 
   Scalar contact_probability_beta1;
 
-  Scalar lpf_dqj_cutoff;
+  Scalar lpf_dqJ_cutoff;
   Scalar lpf_gyro_cutoff;
   Scalar hpf_contact_frame_pos_cutoff;
   Scalar cf_base_lin_vel_cutoff;
@@ -51,7 +51,7 @@ public:
     settings.contact_probability_beta0  = -4.0;
     settings.contact_probability_beta1  = 0.25;
 
-    settings.lpf_dqj_cutoff               = 250;
+    settings.lpf_dqJ_cutoff               = 250;
     settings.lpf_gyro_cutoff              = 250;
     settings.hpf_contact_frame_pos_cutoff = 250;
     settings.cf_base_lin_vel_cutoff       = 250;

@@ -18,8 +18,8 @@ using Vector4f = types::Vector4<float>;
 using Vector3f = types::Vector3<float>;
 using Quaternionf = types::Quaternion<float>;
 
-template StateEstimator<double>::StateEstimator(const StateEstimatorSettings<double>& settings);
-template StateEstimator<float>::StateEstimator(const StateEstimatorSettings<float>& settings);
+template StateEstimator<double>::StateEstimator(const StateEstimatorSettings<double>&);
+template StateEstimator<float>::StateEstimator(const StateEstimatorSettings<float>&);
 
 template StateEstimator<double>::StateEstimator();
 template StateEstimator<float>::StateEstimator();
@@ -36,17 +36,15 @@ template void StateEstimator<float>::addCalibrationData(const Vector3f&, const V
 template void StateEstimator<double>::doCalibration(const Quaterniond&);
 template void StateEstimator<float>::doCalibration(const Quaternionf&);
 
-template void StateEstimator<double>::update(
-    const Quaterniond&, const Vector3d&, const Vector3d&, 
-    const Vector12d&, const Vector12d&, const std::array<std::int16_t, 4>&);
-template void StateEstimator<float>::update(
-    const Quaternionf&, const Vector3f&, const Vector3f&, 
-    const Vector12f&, const Vector12f&, const std::array<std::int16_t, 4>&);
+template void StateEstimator<double>::update(const Quaterniond&, const Vector3d&, const Vector3d&, 
+                                             const Vector12d&, const Vector12d&, const Vector4d&);
+    // const Vector12d&, const Vector12d&, const std::array<std::int16_t, 4>&);
+template void StateEstimator<float>::update(const Quaternionf&, const Vector3f&, const Vector3f&, 
+                                            const Vector12f&, const Vector12f&, const Vector4f&);
+    // const Vector12f&, const Vector12f&, const std::array<std::int16_t, 4>&);
 
-template void StateEstimator<double>::reset(
-    const double, const double, const Vector4d&);
-template void StateEstimator<float>::reset(
-    const float, const float, const Vector4f&);
+template void StateEstimator<double>::reset(const double, const double, const Vector4d&);
+template void StateEstimator<float>::reset(const float, const float, const Vector4f&);
 
 template const Vector3d& StateEstimator<double>::getBaseLinearVelocityEstimate() const;
 template const Vector3f& StateEstimator<float>::getBaseLinearVelocityEstimate() const;

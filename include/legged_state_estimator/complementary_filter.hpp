@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
+#include <cassert>
 
 #include "legged_state_estimator/macros.hpp"
 #include "legged_state_estimator/types.hpp"
@@ -65,6 +66,8 @@ public:
 
   void update(const Vector& obs_hpf, const Vector& obs_lpf,
               const Scalar obs_lpf_prob) {
+    assert(obs_lpf_prob >= 0);
+    assert(obs_lpf_prob <= 1);
     const Scalar new_alpha = 1.0 - obs_lpf_prob * (1.0 - alpha_);
     est_.array() *= new_alpha;
     est_.noalias() += new_alpha * dt_ * obs_hpf;

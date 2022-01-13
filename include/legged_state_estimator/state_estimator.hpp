@@ -42,7 +42,7 @@ public:
       R_(Matrix3::Identity()),
       gravity_accel_(Vector3::Zero()), 
       accel_(Vector3::Zero()),
-      lpf_dqj_(settings.dt, settings.lpf_dqj_cutoff),
+      lpf_dqJ_(settings.dt, settings.lpf_dqJ_cutoff),
       lpf_gyro_(settings.dt, settings.lpf_gyro_cutoff),
       cf_base_lin_vel_(settings.dt, settings.cf_base_lin_vel_cutoff),
       cf_base_pos_(settings.dt, settings.cf_base_pos_cutoff),
@@ -57,7 +57,7 @@ public:
       R_(Matrix3::Identity()),
       gravity_accel_(Vector3::Zero()), 
       accel_(Vector3::Zero()),
-      lpf_dqj_(),
+      lpf_dqJ_(),
       lpf_gyro_(),
       cf_base_lin_vel_(),
       cf_base_pos_(),
@@ -74,15 +74,15 @@ public:
   void resetCalibration() {
     imu_bias_lock_.reset();
     contact_estimator_.reset();
-    lpf_dqj_.reset();
+    lpf_dqJ_.reset();
     lpf_gyro_.reset();
     cf_base_lin_vel_.reset();
     cf_base_pos_.reset();
   }
 
-  void addCalibrationData(const Vector3& gyroscope_raw, 
-                          const Vector3& accelerometer_raw) {
-    imu_bias_lock_.addCalibrationData(gyroscope_raw, accelerometer_raw);
+  void addCalibrationData(const Vector3& gyro_raw, 
+                          const Vector3& accel_raw) {
+    imu_bias_lock_.addCalibrationData(gyro_raw, accel_raw);
   }
 
   void doCalibration(const Quaternion& quat) {
@@ -91,7 +91,7 @@ public:
 
   void update(const Quaternion& quat, const Vector3& imu_gyro_raw, 
               const Vector3& imu_lin_accel_raw, const Vector12& qJ, 
-              const Vector12& dqJ, const std::array<std::int16_t, 4>& f_raw) {
+              const Vector12& dqJ, const Vector4& f_raw) {
     // process imu info (angular vel and linear accel)
     lpf_gyro_.update(imu_gyro_raw-imu_bias_lock_.getGyroBias());
     R_ = quat.toRotationMatrix();
@@ -101,7 +101,7 @@ public:
     contact_estimator_.update(f_raw);
     leg_odometry.updateBaseStateEstimation(quat, lpf_gyro_.getEstimate(), qJ, dqJ, 
                                            contact_estimator_.getContactProbability());
-    lpf_dqj_.update(dqJ);
+    lpf_dqJ_.update(dqJ);
     // complementary filter 
     const Scalar non_contact_prob = contact_estimator_.getNonContactProbability();
     cf_base_lin_vel_.update(accel_,leg_odometry.getBaseLinearVelocityEstimate(), 
@@ -135,7 +135,7 @@ public:
   }
 
   const Vector12& getJointVelocityEstimate() const {
-    return lpf_dqj_.getEstimate();
+    return lpf_dqJ_.getEstimate();
   }
 
   const Vector4& getContactForceEstimate() const {
@@ -166,7 +166,7 @@ private:
   LegOdometry<Scalar> leg_odometry;
   Matrix3 R_;
   Vector3 gravity_accel_, accel_, base_pos_;
-  LowPassFilter<Scalar, 12> lpf_dqj_;
+  LowPassFilter<Scalar, 12> lpf_dqJ_;
   LowPassFilter<Scalar, 3> lpf_gyro_;
   ComplementaryFilter<Scalar, 3> cf_base_lin_vel_, cf_base_pos_;
   Scalar dt_;

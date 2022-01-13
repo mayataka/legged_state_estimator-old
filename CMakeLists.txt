@@ -55,7 +55,7 @@ endif()
 ##############
 ## Bindings ##
 ##############
-# add_subdirectory(bindings)
+add_subdirectory(bindings/python)
 
 #############
 ## Install ##
