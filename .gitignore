@@ -1,0 +1,8 @@
+build/
+.vscode/
+pybind11/
+pybind11-build/
+__pycache__/
+*.mp4
+*.log
+*.pdf
