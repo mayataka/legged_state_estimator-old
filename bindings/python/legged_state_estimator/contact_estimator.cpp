@@ -11,7 +11,7 @@ namespace python {
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(state_estimator, m) {
+PYBIND11_MODULE(contact_estimator, m) {
   py::class_<ContactEstimator<double>>(m, "ContactEstimator")
     .def(py::init<const Eigen::Vector4d&, const int, const double, const double>(),
           py::arg("force_sensor_bias"), py::arg("window_filter_size"),
