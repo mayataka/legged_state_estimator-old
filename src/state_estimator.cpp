@@ -38,10 +38,8 @@ template void StateEstimator<float>::doCalibration(const Quaternionf&);
 
 template void StateEstimator<double>::update(const Quaterniond&, const Vector3d&, const Vector3d&, 
                                              const Vector12d&, const Vector12d&, const Vector4d&);
-    // const Vector12d&, const Vector12d&, const std::array<std::int16_t, 4>&);
 template void StateEstimator<float>::update(const Quaternionf&, const Vector3f&, const Vector3f&, 
                                             const Vector12f&, const Vector12f&, const Vector4f&);
-    // const Vector12f&, const Vector12f&, const std::array<std::int16_t, 4>&);
 
 template void StateEstimator<double>::reset(const double, const double, const Vector4d&);
 template void StateEstimator<float>::reset(const float, const float, const Vector4f&);
@@ -61,6 +59,9 @@ template const Vector12f& StateEstimator<float>::getJointVelocityEstimate() cons
 template const Vector4d& StateEstimator<double>::getContactForceEstimate() const;
 template const Vector4f& StateEstimator<float>::getContactForceEstimate() const;
 
+template double StateEstimator<double>::getContactProbability(const int) const;
+template float StateEstimator<float>::getContactProbability(const int) const;
+
 template const Vector4d& StateEstimator<double>::getContactProbability() const;
 template const Vector4f& StateEstimator<float>::getContactProbability() const;
 
@@ -72,6 +73,12 @@ template const std::array<Vector3f, 4>& StateEstimator<float>::getContactFramePo
 
 template const Vector3d& StateEstimator<double>::getContactFramePositionEstimate(const int) const;
 template const Vector3f& StateEstimator<float>::getContactFramePositionEstimate(const int) const;
+
+template const std::array<Vector3d, 4>& StateEstimator<double>::getContactFrameVelocityEstimate() const;
+template const std::array<Vector3f, 4>& StateEstimator<float>::getContactFrameVelocityEstimate() const;
+
+template const Vector3d& StateEstimator<double>::getContactFrameVelocityEstimate(const int) const;
+template const Vector3f& StateEstimator<float>::getContactFrameVelocityEstimate(const int) const;
 
 template class StateEstimator<double>;
 template class StateEstimator<float>;

@@ -142,6 +142,10 @@ public:
     return contact_estimator_.getContactForceEstimate();
   }
 
+  Scalar getContactProbability(const int contact_id) const {
+    return contact_estimator_.getContactProbability(contact_id);
+  }
+
   const Vector4& getContactProbability() const {
     return contact_estimator_.getContactProbability();
   }
@@ -157,6 +161,15 @@ public:
   const std::array<Vector3, 4>& getContactFramePositionEstimate() const {
     return leg_odometry.getContactFramePositionEstimate();
   }
+
+  const Vector3& getContactFrameVelocityEstimate(const int contact_id) const {
+    return leg_odometry.getContactFrameVelocityEstimate(contact_id);
+  }
+
+  const std::array<Vector3, 4>& getContactFrameVelocityEstimate() const {
+    return leg_odometry.getContactFrameVelocityEstimate();
+  }
+
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 

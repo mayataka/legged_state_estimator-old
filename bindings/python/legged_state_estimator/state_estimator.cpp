@@ -32,8 +32,22 @@ PYBIND11_MODULE(state_estimator, m) {
     .def("get_base_position_estimate", &StateEstimator<double>::getBasePositionEstimate)
     .def("get_joint_velocity_estimate", &StateEstimator<double>::getJointVelocityEstimate)
     .def("get_contact_force_estimate", &StateEstimator<double>::getContactForceEstimate)
-    .def("get_contact_probability", &StateEstimator<double>::getContactProbability)
-    .def("get_non_contact_probability", &StateEstimator<double>::getNonContactProbability);
+    .def("get_contact_probability", 
+          static_cast<const Eigen::Vector4d& (StateEstimator<double>::*)() const>(&StateEstimator<double>::getContactProbability))
+    .def("get_contact_probability", 
+          static_cast<double (StateEstimator<double>::*)(const int) const>(&StateEstimator<double>::getContactProbability),
+          py::arg("contact_id"))
+    .def("get_non_contact_probability", &StateEstimator<double>::getNonContactProbability)
+    .def("get_contact_frame_position_estimate", 
+          static_cast<const std::array<Eigen::Vector3d, 4>& (StateEstimator<double>::*)() const>(&StateEstimator<double>::getContactFramePositionEstimate))
+    .def("get_contact_frame_position_estimate", 
+          static_cast<const Eigen::Vector3d& (StateEstimator<double>::*)(const int) const>(&StateEstimator<double>::getContactFramePositionEstimate),
+          py::arg("contact_id"))
+    .def("get_contact_frame_velocity_estimate", 
+          static_cast<const std::array<Eigen::Vector3d, 4>& (StateEstimator<double>::*)() const>(&StateEstimator<double>::getContactFrameVelocityEstimate))
+    .def("get_contact_frame_velocity_estimate", 
+          static_cast<const Eigen::Vector3d& (StateEstimator<double>::*)(const int) const>(&StateEstimator<double>::getContactFrameVelocityEstimate),
+          py::arg("contact_id"));
 }
 
 } // namespace python

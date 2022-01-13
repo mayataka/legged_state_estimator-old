@@ -21,7 +21,11 @@ PYBIND11_MODULE(state_estimator, m) {
     .def("update", &ContactEstimator<double>::update,
           py::arg("f_raw"))
     .def("get_contact_force_estimate", &ContactEstimator<double>::getContactForceEstimate)
-//     .def("get_contact_probability", &ContactEstimator<double>::getContactProbability)
+    .def("get_contact_probability", 
+          static_cast<const Eigen::Vector4d& (ContactEstimator<double>::*)() const>(&ContactEstimator<double>::getContactProbability))
+    .def("get_contact_probability", 
+          static_cast<double (ContactEstimator<double>::*)(const int) const>(&ContactEstimator<double>::getContactProbability),
+          py::arg("contact_id"))
     .def("get_non_contact_probability", &ContactEstimator<double>::getNonContactProbability)
     .def("get_force_bias", &ContactEstimator<double>::setForceBias,
           py::arg("force-bias"))
