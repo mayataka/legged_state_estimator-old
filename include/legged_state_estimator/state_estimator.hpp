@@ -42,6 +42,8 @@ public:
       R_(Matrix3::Identity()),
       gravity_accel_(Vector3::Zero()), 
       accel_(Vector3::Zero()),
+      base_lin_vel_tmp_(Vector3::Zero()), 
+      base_pos_tmp_(Vector3::Zero()),
       lpf_dqJ_(settings.dt, settings.lpf_dqJ_cutoff),
       lpf_gyro_(settings.dt, settings.lpf_gyro_cutoff),
       cf_base_lin_vel_(settings.dt, settings.cf_base_lin_vel_cutoff),
@@ -57,6 +59,8 @@ public:
       R_(Matrix3::Identity()),
       gravity_accel_(Vector3::Zero()), 
       accel_(Vector3::Zero()),
+      base_lin_vel_tmp_(Vector3::Zero()), 
+      base_pos_tmp_(Vector3::Zero()),
       lpf_dqJ_(),
       lpf_gyro_(),
       cf_base_lin_vel_(),
@@ -104,7 +108,7 @@ public:
     lpf_dqJ_.update(dqJ);
     // complementary filter 
     const Scalar non_contact_prob = contact_estimator_.getNonContactProbability();
-    cf_base_lin_vel_.update(accel_,leg_odometry.getBaseLinearVelocityEstimate(), 
+    cf_base_lin_vel_.update(accel_, leg_odometry.getBaseLinearVelocityEstimate(), 
                             (1.0-non_contact_prob));
     cf_base_pos_.update(cf_base_lin_vel_.getEstimate(), 
                         leg_odometry.getBasePositionEstimate(), 
@@ -112,6 +116,20 @@ public:
     // update internal contact position estimates
     leg_odometry.updateContactPositionEstimation(
         cf_base_lin_vel_.getEstimate(), contact_estimator_.getContactProbability());
+  }
+
+  // this is for when the robot is flying (ContactState::Flying)
+  void predict(const Quaternion& quat, const Vector3& imu_gyro_raw,
+               const Vector3& base_accel_pred, 
+               const Vector12& qJ, const Vector12& dqJ) {
+    // process imu info (angular vel and linear accel)
+    lpf_gyro_.update(imu_gyro_raw-imu_bias_lock_.getGyroBias());
+    lpf_dqJ_.update(dqJ);
+    // This accel is a tmp vector.
+    base_lin_vel_tmp_ = cf_base_lin_vel_.getEstimate() + dt_ * base_accel_pred;
+    base_pos_tmp_ = cf_base_pos_.getEstimate() + dt_ * cf_base_lin_vel_.getEstimate();
+    cf_base_lin_vel_.reset(base_lin_vel_tmp_);
+    cf_base_pos_.reset(base_pos_tmp_);
   }
 
   void reset(const Scalar base_x=0, const Scalar base_y=0, 
@@ -178,7 +196,7 @@ private:
   ContactEstimator<Scalar> contact_estimator_;
   LegOdometry<Scalar> leg_odometry;
   Matrix3 R_;
-  Vector3 gravity_accel_, accel_, base_pos_;
+  Vector3 gravity_accel_, accel_, base_lin_vel_tmp_, base_pos_tmp_;
   LowPassFilter<Scalar, 12> lpf_dqJ_;
   LowPassFilter<Scalar, 3> lpf_gyro_;
   ComplementaryFilter<Scalar, 3> cf_base_lin_vel_, cf_base_pos_;
