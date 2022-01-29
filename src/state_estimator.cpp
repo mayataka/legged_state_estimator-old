@@ -42,9 +42,9 @@ template void StateEstimator<float>::update(const Quaternionf&, const Vector3f&,
                                             const Vector12f&, const Vector12f&, const Vector4f&);
 
 template void StateEstimator<double>::predict(const Quaterniond&, const Vector3d&, const Vector3d&, 
-                                              const Vector12d&, const Vector12d&);
+                                              const Vector12d&, const Vector12d&, const Vector4d&);
 template void StateEstimator<float>::predict(const Quaternionf&, const Vector3f&, const Vector3f&, 
-                                             const Vector12f&, const Vector12f&);
+                                             const Vector12f&, const Vector12f&, const Vector4f&);
 
 template void StateEstimator<double>::reset(const double, const double, const Vector4d&);
 template void StateEstimator<float>::reset(const float, const float, const Vector4f&);

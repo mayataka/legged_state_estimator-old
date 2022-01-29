@@ -121,9 +121,11 @@ public:
   // this is for when the robot is flying (ContactState::Flying)
   void predict(const Quaternion& quat, const Vector3& imu_gyro_raw,
                const Vector3& base_accel_pred, 
-               const Vector12& qJ, const Vector12& dqJ) {
+               const Vector12& qJ, const Vector12& dqJ, const Vector4& f_raw) {
     // process imu info (angular vel and linear accel)
     lpf_gyro_.update(imu_gyro_raw-imu_bias_lock_.getGyroBias());
+    // process contact and encoder info
+    contact_estimator_.update(f_raw);
     lpf_dqJ_.update(dqJ);
     // This accel is a tmp vector.
     base_lin_vel_tmp_ = cf_base_lin_vel_.getEstimate() + dt_ * base_accel_pred;

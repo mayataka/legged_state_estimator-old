@@ -25,7 +25,7 @@ PYBIND11_MODULE(state_estimator, m) {
           py::arg("qJ"), py::arg("dqJ"), py::arg("f"))
     .def("predict", &StateEstimator<double>::predict,
           py::arg("quat"), py::arg("imu_gyro_raw"), py::arg("base_accel_pred"), 
-          py::arg("qJ"), py::arg("dqJ"))
+          py::arg("qJ"), py::arg("dqJ"), py::arg("f"))
     .def("reset", &StateEstimator<double>::reset,
           py::arg("base_x")=0, py::arg("base_y")=0, 
           py::arg("contact_height")=Eigen::Vector4d::Zero())
