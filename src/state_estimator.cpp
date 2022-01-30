@@ -41,6 +41,11 @@ template void StateEstimator<double>::update(const Quaterniond&, const Vector3d&
 template void StateEstimator<float>::update(const Quaternionf&, const Vector3f&, const Vector3f&, 
                                             const Vector12f&, const Vector12f&, const Vector4f&);
 
+template void StateEstimator<double>::predict_mpc(const Quaterniond&, const Vector3d&, const Vector3d&, const Vector3d&, const Vector3d&,
+                                                  const Vector12d&, const Vector12d&, const Vector4d&);
+template void StateEstimator<float>::predict_mpc(const Quaternionf&, const Vector3f&, const Vector3f&, const Vector3f&, const Vector3f&,
+                                                 const Vector12f&, const Vector12f&, const Vector4f&);
+
 template void StateEstimator<double>::predict(const Quaterniond&, const Vector3d&, const Vector3d&, const Vector3d&, 
                                               const Vector12d&, const Vector12d&, const Vector4d&);
 template void StateEstimator<float>::predict(const Quaternionf&, const Vector3f&, const Vector3f&, const Vector3f&,

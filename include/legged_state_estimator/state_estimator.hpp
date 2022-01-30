@@ -119,6 +119,25 @@ public:
   }
 
   // this is for when the robot is flying (ContactState::Flying)
+  void predict_mpc(const Quaternion& quat, const Vector3& imu_gyro_raw,
+                   const Vector3& imu_lin_accel_raw, 
+                   const Vector3& base_pos_pred, const Vector3& base_lin_vel_pred, 
+                   const Vector12& qJ, const Vector12& dqJ, const Vector4& f_raw) {
+    // process imu info (angular vel and linear accel)
+    lpf_gyro_.update(imu_gyro_raw-imu_bias_lock_.getGyroBias());
+    R_ = quat.toRotationMatrix();
+    // accel_.noalias() = R_ * (imu_lin_accel_raw-imu_bias_lock_.getAccelBias());
+    accel_.noalias() = R_ * (imu_lin_accel_raw-imu_bias_lock_.getAccelBias())
+                        + gravity_accel_;
+    // process contact and encoder info
+    contact_estimator_.update(f_raw);
+    lpf_dqJ_.update(dqJ);
+    // This accel is a tmp vector.
+    cf_base_lin_vel_.update(accel_, base_lin_vel_pred, 1.0);
+    cf_base_pos_.update(cf_base_lin_vel_.getEstimate(), base_pos_pred, 1.0);
+  }
+
+  // this is for when the robot is flying (ContactState::Flying)
   void predict(const Quaternion& quat, const Vector3& imu_gyro_raw,
                const Vector3& imu_lin_accel_raw, const Vector3& base_accel_pred, 
                const Vector12& qJ, const Vector12& dqJ, const Vector4& f_raw) {
@@ -135,7 +154,7 @@ public:
     base_lin_vel_tmp_ = cf_base_lin_vel_.getEstimate() + dt_ * base_accel_pred;
     base_pos_tmp_ = cf_base_pos_.getEstimate() + dt_ * cf_base_lin_vel_.getEstimate();
     cf_base_lin_vel_.update(accel_, base_lin_vel_tmp_, 1.0);
-    cf_base_pos_.update(base_lin_vel_tmp_, base_pos_tmp_, 1.0);
+    cf_base_pos_.update(cf_base_lin_vel_.getEstimate(), base_pos_tmp_, 1.0);
   }
 
   // this is for when the robot is flying (ContactState::Flying)
