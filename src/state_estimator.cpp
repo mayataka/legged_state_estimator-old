@@ -27,37 +27,27 @@ template StateEstimator<float>::StateEstimator();
 template StateEstimator<double>::~StateEstimator();
 template StateEstimator<float>::~StateEstimator();
 
-template void StateEstimator<double>::resetCalibration();
-template void StateEstimator<float>::resetCalibration();
+template void StateEstimator<double>::update(const Vector3d&, const Vector3d&, 
+                                             const Vector12d&, const Vector12d&, 
+                                             const Vector12d&, const Vector4d&);
+template void StateEstimator<float>::update(const Vector3f&, const Vector3f&, 
+                                            const Vector12f&, const Vector12f&, 
+                                            const Vector12f&, const Vector4f&);
 
-template void StateEstimator<double>::addCalibrationData(const Vector3d&, const Vector3d&);
-template void StateEstimator<float>::addCalibrationData(const Vector3f&, const Vector3f&);
+template void StateEstimator<double>::predict(const Vector3d&, const Vector3d&, 
+                                              const Vector12d&, const Vector12d&, 
+                                              const Vector12d&, const Vector4d&,
+                                              const Vector3d&);
+template void StateEstimator<float>::predict(const Vector3f&, const Vector3f&, 
+                                             const Vector12f&, const Vector12f&, 
+                                             const Vector12f&, const Vector4f&,
+                                             const Vector3f&);
 
-template void StateEstimator<double>::doCalibration(const Quaterniond&);
-template void StateEstimator<float>::doCalibration(const Quaternionf&);
+template const Vector3d& StateEstimator<double>::getBasePositionEstimate() const;
+template const Vector3f& StateEstimator<float>::getBasePositionEstimate() const;
 
-template void StateEstimator<double>::update(const Quaterniond&, const Vector3d&, const Vector3d&, 
-                                             const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::update(const Quaternionf&, const Vector3f&, const Vector3f&, 
-                                            const Vector12f&, const Vector12f&, const Vector4f&);
-
-template void StateEstimator<double>::predict_mpc(const Quaterniond&, const Vector3d&, const Vector3d&, const Vector3d&, const Vector3d&,
-                                                  const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::predict_mpc(const Quaternionf&, const Vector3f&, const Vector3f&, const Vector3f&, const Vector3f&,
-                                                 const Vector12f&, const Vector12f&, const Vector4f&);
-
-template void StateEstimator<double>::predict(const Quaterniond&, const Vector3d&, const Vector3d&, const Vector3d&, 
-                                              const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::predict(const Quaternionf&, const Vector3f&, const Vector3f&, const Vector3f&,
-                                             const Vector12f&, const Vector12f&, const Vector4f&);
-
-template void StateEstimator<double>::predict(const Quaterniond&, const Vector3d&, const Vector3d&, 
-                                              const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::predict(const Quaternionf&, const Vector3f&, const Vector3f&, 
-                                             const Vector12f&, const Vector12f&, const Vector4f&);
-
-template void StateEstimator<double>::reset(const double, const double, const Vector4d&);
-template void StateEstimator<float>::reset(const float, const float, const Vector4f&);
+template const Vector4d& StateEstimator<double>::getBaseOrientationEstimate() const;
+template const Vector4f& StateEstimator<float>::getBaseOrientationEstimate() const;
 
 template const Vector3d& StateEstimator<double>::getBaseLinearVelocityEstimate() const;
 template const Vector3f& StateEstimator<float>::getBaseLinearVelocityEstimate() const;
@@ -65,14 +55,11 @@ template const Vector3f& StateEstimator<float>::getBaseLinearVelocityEstimate() 
 template const Vector3d& StateEstimator<double>::getBaseAngularVelocityEstimate() const;
 template const Vector3f& StateEstimator<float>::getBaseAngularVelocityEstimate() const;
 
-template const Vector3d& StateEstimator<double>::getBasePositionEstimate() const;
-template const Vector3f& StateEstimator<float>::getBasePositionEstimate() const;
-
 template const Vector12d& StateEstimator<double>::getJointVelocityEstimate() const;
 template const Vector12f& StateEstimator<float>::getJointVelocityEstimate() const;
 
-template const Vector4d& StateEstimator<double>::getContactForceEstimate() const;
-template const Vector4f& StateEstimator<float>::getContactForceEstimate() const;
+template const Vector12d& StateEstimator<double>::getJointTorqueEstimate() const;
+template const Vector12f& StateEstimator<float>::getJointTorqueEstimate() const;
 
 template double StateEstimator<double>::getContactProbability(const int) const;
 template float StateEstimator<float>::getContactProbability(const int) const;
@@ -82,18 +69,6 @@ template const Vector4f& StateEstimator<float>::getContactProbability() const;
 
 template double StateEstimator<double>::getNonContactProbability() const;
 template float StateEstimator<float>::getNonContactProbability() const;
-
-template const std::array<Vector3d, 4>& StateEstimator<double>::getContactFramePositionEstimate() const;
-template const std::array<Vector3f, 4>& StateEstimator<float>::getContactFramePositionEstimate() const;
-
-template const Vector3d& StateEstimator<double>::getContactFramePositionEstimate(const int) const;
-template const Vector3f& StateEstimator<float>::getContactFramePositionEstimate(const int) const;
-
-template const std::array<Vector3d, 4>& StateEstimator<double>::getContactFrameVelocityEstimate() const;
-template const std::array<Vector3f, 4>& StateEstimator<float>::getContactFrameVelocityEstimate() const;
-
-template const Vector3d& StateEstimator<double>::getContactFrameVelocityEstimate(const int) const;
-template const Vector3f& StateEstimator<float>::getContactFrameVelocityEstimate(const int) const;
 
 template class StateEstimator<double>;
 template class StateEstimator<float>;

@@ -33,6 +33,9 @@ template <typename Scalar>
 using Vector12 = Vector<Scalar, 12>;
 
 template <typename Scalar>
+using Vector7 = Vector<Scalar, 7>;
+
+template <typename Scalar>
 using Vector6 = Vector<Scalar, 6>;
 
 template <typename Scalar>
