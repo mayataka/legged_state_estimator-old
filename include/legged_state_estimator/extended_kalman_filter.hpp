@@ -79,7 +79,7 @@ public:
   // - its linearization:  y = plant.C * x + v
   // - noise covariance:   w : plant.Q, v : plant.R
   Vector<dimx> x_pred, x_hat;
-  Vector<dimx> dx_hat;
+  Vector<dimdx> dx_hat;
   Vector<dimy> y_pred, y;
   Matrix<dimdx, dimdx> A, Q;
   Matrix<dimy, dimdx> C;

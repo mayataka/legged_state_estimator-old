@@ -22,6 +22,7 @@ template <typename Scalar>
 class StateEstimator {
 public:
   using Matrix3  = types::Matrix3<Scalar>;
+  using Vector16 = types::Vector16<Scalar>;
   using Vector12 = types::Vector12<Scalar>;
   using Vector4  = types::Vector4<Scalar>;
   using Vector3  = types::Vector3<Scalar>;
@@ -78,11 +79,12 @@ public:
     lpf_tauJ_.update(tauJ);
     setupEKFMeasurement(qJ, dqJ, lpf_tauJ_.getEstimate(), f_raw);
     ekf_.filteringStep();
-    ekf_.x_hat.template head<7>() 
-        = robot_.integrateBaseConfiguration(ekf_.x_pred.template head<3>(),
-                                            ekf_.x_pred.template segment<4>(3),
-                                            ekf_.dx_hat.template head<3>(3),
-                                            ekf_.dx_hat.template segment<3>(3));
+    robot_.updateBaseConfiguration(ekf_.x_pred.template head<3>(),
+                                   ekf_.x_pred.template segment<4>(3),
+                                   ekf_.dx_hat.template head<3>(3),
+                                   ekf_.dx_hat.template segment<3>(3));
+    ekf_.x_hat.template head<3>() = robot_.getBasePosition();
+    ekf_.x_hat.template segment<4>(3) = robot_.getBaseOrientation();
     ekf_.x_hat.template tail<9>()
         = ekf_.x_pred.template tail<9>() + ekf_.dx_hat.template tail<9>();
   }
@@ -97,32 +99,33 @@ public:
     lpf_tauJ_.update(tauJ);
     ekf_.y = lin_vel_pred;
     ekf_.filteringStep();
-    ekf_.x_hat.template head<7>() 
-        = robot_.integrateBaseConfiguration(ekf_.x_pred.template head<3>(),
-                                            ekf_.x_pred.template segment<4>(3),
-                                            ekf_.dx_hat.template head<3>(3),
-                                            ekf_.dx_hat.template segment<3>(3));
+    robot_.updateBaseConfiguration(ekf_.x_pred.template head<3>(),
+                                   ekf_.x_pred.template segment<4>(3),
+                                   ekf_.dx_hat.template head<3>(3),
+                                   ekf_.dx_hat.template segment<3>(3));
+    ekf_.x_hat.template head<3>() = robot_.getBasePosition();
+    ekf_.x_hat.template segment<4>(3) = robot_.getBaseOrientation();
     ekf_.x_hat.template tail<9>()
         = ekf_.x_pred.template tail<9>() + ekf_.dx_hat.template tail<9>();
   }
 
-  const Vector3& getBasePositionEstimate() const {
+  const Eigen::VectorBlock<const Vector16, 3> getBasePositionEstimate() const {
     return ekf_.x_hat.template segment<3>(0);
   }
 
-  const Vector4& getBaseOrientationEstimate() const {
+  const Eigen::VectorBlock<const Vector16, 4> getBaseOrientationEstimate() const {
     return ekf_.x_hat.template segment<4>(3);
   }
 
-  const Vector3& getBaseLinearVelocityEstimate() const {
+  const Eigen::VectorBlock<const Vector16, 3> getBaseLinearVelocityEstimate() const {
     return ekf_.x_hat.template segment<3>(7);
   }
 
-  const Vector3& getIMUGyroBiasEstimate() const {
+  const Eigen::VectorBlock<const Vector16, 3> getIMUGyroBiasEstimate() const {
     return ekf_.x_hat.template segment<3>(10);
   }
 
-  const Vector3& getIMULinearAccelerationBiasEstimate() const {
+  const Eigen::VectorBlock<const Vector16, 3> getIMULinearAccelerationBiasEstimate() const {
     return ekf_.x_hat.template segment<3>(13);
   }
 
@@ -168,7 +171,7 @@ private:
   void setupEKFPrediction(const Vector3& imu_gyro_raw, 
                           const Vector3& imu_linear_acc_raw) {
     // process imu info (angular vel and linear accel)
-    const auto& quat = ekf_.x_hat.segment<4>(3);
+    const auto quat = getBaseOrientationEstimate();
     R_ = Quaternion(quat.coeff(3), quat.coeff(0), quat.coeff(1), quat.coeff(2)).toRotationMatrix();
     base_angular_vel_nobias_.noalias() = imu_gyro_raw - getIMUGyroBiasEstimate();
     base_linear_acc_nobias_.noalias() 
@@ -185,7 +188,7 @@ private:
     ekf_.x_pred.template segment<4>(3) = robot_.getBaseOrientation();
     ekf_.x_pred.template segment<3>(7) = robot_.getBaseLinearVelocity();
     ekf_.x_pred.template tail<6>()     = ekf_.x_hat.template tail<6>();
-    ekf_.y_pred = ekf_.f.template segment<3>(7);
+    ekf_.y_pred = ekf_.x_pred.template segment<3>(7);
     ekf_.A.template block<6, 6>(0, 0) = robot_.getBaseJacobianWrtConfiguration();
     ekf_.A.template block<6, 3>(0, 6) = dt_ * robot_.getBaseJacobianWrtVelocity().template leftCols<3>();
     ekf_.A.template block<6, 3>(0, 9) = - dt_ * robot_.getBaseJacobianWrtVelocity().template rightCols<3>();
@@ -210,7 +213,7 @@ private:
       for (int i=0; i<4; ++i) {
         ekf_.y.noalias() 
             -= (contact_estimator_.getContactProbability(i)/contact_prob_sum) 
-                * robot_.getContatVelocity(i);
+                * robot_.getContactVelocity(i);
       }
     }
   }

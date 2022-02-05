@@ -6,6 +6,7 @@ namespace legged_state_estimator {
 
 using Vector19d = types::Vector19<double>;
 using Vector18d = types::Vector18<double>;
+using Vector16d = types::Vector16<double>;
 using Vector12d = types::Vector12<double>;
 using Vector4d = types::Vector4<double>;
 using Vector3d = types::Vector3<double>;
@@ -13,6 +14,7 @@ using Quaterniond = types::Quaternion<double>;
 
 using Vector19f = types::Vector19<float>;
 using Vector18f = types::Vector18<float>;
+using Vector16f = types::Vector16<float>;
 using Vector12f = types::Vector12<float>;
 using Vector4f = types::Vector4<float>;
 using Vector3f = types::Vector3<float>;
@@ -43,14 +45,14 @@ template void StateEstimator<float>::predict(const Vector3f&, const Vector3f&,
                                              const Vector12f&, const Vector4f&,
                                              const Vector3f&);
 
-template const Vector3d& StateEstimator<double>::getBasePositionEstimate() const;
-template const Vector3f& StateEstimator<float>::getBasePositionEstimate() const;
+template const Eigen::VectorBlock<const Vector16d, 3> StateEstimator<double>::getBasePositionEstimate() const;
+template const Eigen::VectorBlock<const Vector16f, 3> StateEstimator<float>::getBasePositionEstimate() const;
 
-template const Vector4d& StateEstimator<double>::getBaseOrientationEstimate() const;
-template const Vector4f& StateEstimator<float>::getBaseOrientationEstimate() const;
+template const Eigen::VectorBlock<const Vector16d, 4> StateEstimator<double>::getBaseOrientationEstimate() const;
+template const Eigen::VectorBlock<const Vector16f, 4> StateEstimator<float>::getBaseOrientationEstimate() const;
 
-template const Vector3d& StateEstimator<double>::getBaseLinearVelocityEstimate() const;
-template const Vector3f& StateEstimator<float>::getBaseLinearVelocityEstimate() const;
+template const Eigen::VectorBlock<const Vector16d, 3> StateEstimator<double>::getBaseLinearVelocityEstimate() const;
+template const Eigen::VectorBlock<const Vector16f, 3> StateEstimator<float>::getBaseLinearVelocityEstimate() const;
 
 template const Vector3d& StateEstimator<double>::getBaseAngularVelocityEstimate() const;
 template const Vector3f& StateEstimator<float>::getBaseAngularVelocityEstimate() const;
