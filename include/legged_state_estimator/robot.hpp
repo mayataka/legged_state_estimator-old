@@ -50,7 +50,7 @@ public:
       v_integ_(Vector18::Zero()),
       v_base_linear_integ_out_(Vector3::Zero()),
       jac_6d_(contact_frames.size(), Jacobian6D::Zero()), 
-      local_contact_frame_velocity_(contact_frames.size(), Vector3::Zero()) {
+      contact_frame_velocity_(contact_frames.size(), Vector3::Zero()) {
     pinocchio::Model dmodel;
     pinocchio::urdf::buildModel(path_to_urdf, 
                                 pinocchio::JointModelFreeFlyer(), dmodel);
@@ -73,7 +73,7 @@ public:
       v_integ_(Vector18::Zero()),
       v_base_linear_integ_out_(Vector3::Zero()),
       jac_6d_(), 
-      local_contact_frame_velocity_() {
+      contact_frame_velocity_() {
   }
 
   ~Robot() {}
@@ -113,9 +113,9 @@ public:
     v_base_linear_integ_out_.noalias() = base_linear_vel + dt * base_linear_acc;
   }
 
-  void updateLocalKinematics(const Vector3& base_angular_vel,
-                             const Vector12& qJ, const Vector12& dqJ,
-                             const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED) {
+  void updateLegKinematics(const Vector3& base_angular_vel,
+                           const Vector12& qJ, const Vector12& dqJ,
+                           const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED) {
     updateKinematics(Vector3::Zero(), Quaternion::Identity().coeffs(), 
                      Vector3::Zero(), base_angular_vel, qJ, dqJ, rf);
   }
@@ -131,20 +131,23 @@ public:
     v_.template segment<3>(3) = base_angular_vel;
     v_.template tail<12>() = dqJ;
     pinocchio::normalize(model_, q_);
-    pinocchio::framesForwardKinematics(model_, data_, q_);
+    pinocchio::forwardKinematics(model_, data_, q_, v_);
+    pinocchio::updateFramePlacements(model_, data_);
     pinocchio::computeJointJacobians(model_, data_, q_);
     for (int i=0; i<contact_frames_.size(); ++i) {
       pinocchio::getFrameJacobian(model_, data_, contact_frames_[i], rf, jac_6d_[i]);
-      local_contact_frame_velocity_[i].noalias()
-          = jac_6d_[i].template topRows<3>() * v_; 
+      contact_frame_velocity_[i].noalias() 
+          = pinocchio::getFrameVelocity(model_, data_, contact_frames_[i], rf).linear()
+              - pinocchio::getFrameVelocity(model_, data_, 1, rf).linear();
     }
   }
 
-  void updateLocalDynamics(const Vector12& qJ, const Vector12& dqJ, 
-                           const Vector3& base_linear_acc=Vector3::Zero(), 
-                           const Vector3& base_angular_acc=Vector3::Zero()) {
+  void updateLegDynamics(const Vector12& qJ, const Vector12& dqJ, 
+                         const Vector3& base_linear_acc=Vector3::Zero(), 
+                         const Vector3& base_angular_acc=Vector3::Zero()) {
     updateDynamics(Vector3::Zero(), Quaternion::Identity().coeffs(), 
-                   Vector3::Zero(), Vector3::Zero(), qJ, dqJ);
+                   Vector3::Zero(), Vector3::Zero(), qJ, dqJ,
+                   Vector3::Zero(), Vector3::Zero());
   }
 
   void updateDynamics(const Vector3& base_pos, const Vector4& base_quat, 
@@ -183,14 +186,18 @@ public:
     return jac_integ_dv_.template topLeftCorner<6, 6>();
   }
 
+  const Vector3& getContactPosition(const int contact_id) const {
+    return data_.oMf[contact_frames_[contact_id]].translation();
+  }
+
+  const Vector3& getContactVelocity(const int contact_id) const {
+    return contact_frame_velocity_[contact_id];
+  }
+
   const Eigen::Block<const Jacobian6D, 3, 18> getContactJacobian(const int contact_id) const {
     assert(contat_id >= 0);
     assert(contat_id < 4);
     return jac_6d_[contact_id].template topLeftCorner<3, 18>();
-  }
-
-  const Vector3& getContactVelocity(const int contact_id) const {
-    return local_contact_frame_velocity_[contact_id];
   }
 
   const Vector18& getDynamics() const {
@@ -211,7 +218,7 @@ private:
   Vector18 v_, a_, tau_, v_integ_;
   Vector3 v_base_linear_integ_out_;
   std::vector<Jacobian6D, Eigen::aligned_allocator<Jacobian6D>> jac_6d_;
-  std::vector<Vector3> local_contact_frame_velocity_;
+  std::vector<Vector3> contact_frame_velocity_;
   std::array<int, 4> contact_frames_;
 
 };

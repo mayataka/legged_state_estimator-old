@@ -13,14 +13,16 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(contact_estimator, m) {
   py::class_<ContactEstimator<double>>(m, "ContactEstimator")
-    .def(py::init<const Eigen::Vector4d&, const int, const double, const double>(),
-          py::arg("force_sensor_bias"), py::arg("window_filter_size"),
-          py::arg("beta1"), py::arg("beta0"))
+    .def(py::init<const double, const double, const double, const double, const Eigen::Vector4d&>(),
+          py::arg("sampling_time"), py::arg("compl_cutoff_freq"),
+          py::arg("beta1"), py::arg("beta0"), py::arg("force_sensor_bias"))
     .def(py::init<>())
     .def("reset", &ContactEstimator<double>::reset)
     .def("update", &ContactEstimator<double>::update,
-          py::arg("f_raw"))
+          py::arg("robot"), py::arg("tauJ"), py::arg("force_sensor_raw"))
     .def("get_contact_force_estimate", &ContactEstimator<double>::getContactForceEstimate)
+    .def("set_contact_surface_normal", 
+          static_cast<const Eigen::Vector4d& (ContactEstimator<double>::*)() const>(&ContactEstimator<double>::getContactProbability))
     .def("get_contact_probability", 
           static_cast<const Eigen::Vector4d& (ContactEstimator<double>::*)() const>(&ContactEstimator<double>::getContactProbability))
     .def("get_contact_probability", 

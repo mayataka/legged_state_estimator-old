@@ -72,12 +72,12 @@ public:
   void update(const Vector3& imu_gyro_raw, const Vector3& imu_lin_accel_raw, 
               const Vector12& qJ, const Vector12& dqJ, const Vector12& tauJ, 
               const Vector4& f_raw) {
-    setupEKFPrediction(imu_gyro_raw, imu_lin_accel_raw);
+    updateIMU(imu_gyro_raw, imu_lin_accel_raw);
     ekf_.predictionStep();
     lpf_gyro_.update(imu_gyro_raw-getIMUGyroBiasEstimate());
     lpf_dqJ_.update(dqJ);
     lpf_tauJ_.update(tauJ);
-    setupEKFMeasurement(qJ, dqJ, lpf_tauJ_.getEstimate(), f_raw);
+    updateLegOdometry(qJ, dqJ, lpf_tauJ_.getEstimate(), f_raw);
     ekf_.filteringStep();
     robot_.updateBaseConfiguration(ekf_.x_pred.template head<3>(),
                                    ekf_.x_pred.template segment<4>(3),
@@ -92,7 +92,7 @@ public:
   void predict(const Vector3& imu_gyro_raw, const Vector3& imu_lin_accel_raw, 
                const Vector12& qJ, const Vector12& dqJ, const Vector12& tauJ, 
                const Vector4& f_raw, const Vector3& lin_vel_pred) {
-    setupEKFPrediction(imu_gyro_raw, imu_lin_accel_raw);
+    updateIMU(imu_gyro_raw, imu_lin_accel_raw);
     ekf_.predictionStep();
     lpf_gyro_.update(imu_gyro_raw-getIMUGyroBiasEstimate());
     lpf_dqJ_.update(dqJ);
@@ -168,9 +168,9 @@ private:
   Vector3 base_angular_vel_nobias_, base_linear_acc_nobias_, gravity_accel_;
   Scalar dt_;
 
-  void setupEKFPrediction(const Vector3& imu_gyro_raw, 
-                          const Vector3& imu_linear_acc_raw) {
-    // process imu info (angular vel and linear accel)
+  void updateIMU(const Vector3& imu_gyro_raw, 
+                 const Vector3& imu_linear_acc_raw) {
+    // IMU measurements
     const auto quat = getBaseOrientationEstimate();
     R_ = Quaternion(quat.coeff(3), quat.coeff(0), quat.coeff(1), quat.coeff(2)).toRotationMatrix();
     base_angular_vel_nobias_.noalias() = imu_gyro_raw - getIMUGyroBiasEstimate();
@@ -199,16 +199,16 @@ private:
     // ekf_.G.template block<>() = ;
   }
 
-  void setupEKFMeasurement(const Vector12& qJ, const Vector12& dqJ, 
-                           const Vector12& tauJ, const Vector4& f_raw) {
-    robot_.updateLocalKinematics(base_angular_vel_nobias_, qJ, dqJ);
-    robot_.updateLocalDynamics(qJ, dqJ);
-    contact_estimator_.update(robot_, tauJ, f_raw);
+  void updateLegOdometry(const Vector12& qJ, const Vector12& dqJ, 
+                         const Vector12& tauJ, const Vector4& f_raw) {
+    // Leg odometry for filtering step of EKF
+    robot_.updateLegKinematics(base_angular_vel_nobias_, qJ, dqJ);
+    robot_.updateLegDynamics(qJ, dqJ);
+    contact_estimator_.update(robot_, lpf_tauJ_.getEstimate(), f_raw);
     ekf_.y.setZero();
     const double contact_prob_sum 
         = contact_estimator_.getContactProbability().template lpNorm<2>();
-    constexpr auto eps = std::sqrt(std::numeric_limits<Scalar>::epsilon());
-    // EKF measurements (filtering step)
+    const auto eps = std::sqrt(std::numeric_limits<Scalar>::epsilon());
     if (contact_prob_sum > eps) {
       for (int i=0; i<4; ++i) {
         ekf_.y.noalias() 
