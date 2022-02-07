@@ -72,7 +72,7 @@ PYBIND11_MODULE(robot, m) {
          py::arg("contact_index"))
     .def_property_readonly("dynamics", &Robot<double>::getDynamics)
     .def_property_readonly("joint_dynamics", &Robot<double>::getJointDynamics)
-    .def_property_readonly("contact_frames", &Robot<double>::contactFrames);
+    .def_property_readonly("contact_frames", &Robot<double>::getContactFrames);
 }
 
 } // namespace python

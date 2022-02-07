@@ -30,9 +30,12 @@ public:
   Scalar lpf_dqJ_cutoff;
   Scalar lpf_tauJ_cutoff;
 
+  Scalar cov_angular_vel;
+  Scalar cov_linear_acc;
+  Scalar cov_dqJ;
 
-  static StateEstimatorSettings defaultSettings(const std::string& path_to_urdf, 
-                                                const Scalar dt) {
+  static StateEstimatorSettings A1Settings(const std::string& path_to_urdf, 
+                                           const Scalar dt) {
     StateEstimatorSettings settings;
     settings.path_to_urdf = path_to_urdf;
     settings.dt = dt;
@@ -52,6 +55,10 @@ public:
     settings.lpf_gyro_cutoff = 250;
     settings.lpf_dqJ_cutoff  = 250;
     settings.lpf_tauJ_cutoff = 250;
+
+    settings.cov_angular_vel = 0.1;
+    settings.cov_linear_acc  = 0.1;
+    settings.cov_dqJ         = 0.001;
 
     return settings;
   }

@@ -13,9 +13,9 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(state_estimator_settings, m) {
   py::class_<StateEstimatorSettings<double>>(m, "StateEstimatorSettings")
-    .def(py::init(&StateEstimatorSettings<double>::defaultSettings),
-          py::arg("path_to_urdf"), py::arg("dt"))
     .def(py::init<>())
+    .def_static("a1_settings", &StateEstimatorSettings<double>::A1Settings,
+                 py::arg("path_to_urdf"), py::arg("dt"))
     .def_readwrite("path_to_urdf", &StateEstimatorSettings<double>::path_to_urdf)
     .def_readwrite("contact_frames", &StateEstimatorSettings<double>::contact_frames)
     .def_readwrite("dt", &StateEstimatorSettings<double>::dt)

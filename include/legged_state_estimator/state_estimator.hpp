@@ -43,7 +43,10 @@ public:
       base_angular_vel_nobias_(Vector3::Zero()), 
       base_linear_acc_nobias_(Vector3::Zero()),
       gravity_accel_(Vector3::Zero()),
-      dt_(settings.dt) {
+      dt_(settings.dt),
+      cov_angular_vel_(settings.cov_angular_vel), 
+      cov_linear_acc_(settings.cov_linear_acc), 
+      cov_dqJ_(settings.cov_dqJ) {
     gravity_accel_ << 0, 0, -9.81;
   }
 
@@ -59,7 +62,10 @@ public:
       base_angular_vel_nobias_(Vector3::Zero()), 
       base_linear_acc_nobias_(Vector3::Zero()),
       gravity_accel_(Vector3::Zero()),
-      dt_(0) {
+      dt_(0),
+      cov_angular_vel_(0),
+      cov_linear_acc_(0),
+      cov_dqJ_(0) {
   }
 
   ~StateEstimator() {}
@@ -166,7 +172,7 @@ private:
   LowPassFilter<Scalar, 3> lpf_gyro_;
   Matrix3 R_, base_linear_acc_nobias_skew_;
   Vector3 base_angular_vel_nobias_, base_linear_acc_nobias_, gravity_accel_;
-  Scalar dt_;
+  Scalar dt_, cov_angular_vel_, cov_linear_acc_, cov_dqJ_;
 
   void updateIMU(const Vector3& imu_gyro_raw, 
                  const Vector3& imu_linear_acc_raw) {
@@ -196,7 +202,10 @@ private:
     ekf_.A.template block<3, 3>(6, 6).setIdentity();
     ekf_.A.template block<3, 3>(6, 9) = - dt_ * R_;
     ekf_.C = ekf_.A.template middleRows<3>(6);
-    // ekf_.G.template block<>() = ;
+    ekf_.Q.noalias() = cov_angular_vel_ * ekf_.A.template middleCols<3>(9) 
+                                        * ekf_.A.template middleCols<3>(9).transpose();
+    ekf_.Q.noalias() += cov_linear_acc_ * ekf_.A.template rightCols<3>() 
+                                        * ekf_.A.template rightCols<3>().transpose();
   }
 
   void updateLegOdometry(const Vector12& qJ, const Vector12& dqJ, 
@@ -206,14 +215,17 @@ private:
     robot_.updateLegDynamics(qJ, dqJ);
     contact_estimator_.update(robot_, lpf_tauJ_.getEstimate(), f_raw);
     ekf_.y.setZero();
+    ekf_.R.setZero();
     const double contact_prob_sum 
         = contact_estimator_.getContactProbability().template lpNorm<2>();
     const auto eps = std::sqrt(std::numeric_limits<Scalar>::epsilon());
     if (contact_prob_sum > eps) {
       for (int i=0; i<4; ++i) {
-        ekf_.y.noalias() 
-            -= (contact_estimator_.getContactProbability(i)/contact_prob_sum) 
-                * robot_.getContactVelocity(i);
+        const Scalar weight 
+            = contact_estimator_.getContactProbability(i) / contact_prob_sum;
+        ekf_.y.noalias() -= weight * robot_.getContactVelocity(i);
+        const auto& J = robot_.getContactJacobian(i);
+        ekf_.R.noalias() += (weight*cov_dqJ_) * J * J.transpose();
       }
     }
   }

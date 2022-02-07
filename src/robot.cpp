@@ -94,8 +94,8 @@ template const Vector3f& Robot<float>::getContactPosition(const int) const;
 template const Vector3d& Robot<double>::getContactVelocity(const int) const;
 template const Vector3f& Robot<float>::getContactVelocity(const int) const;
 
-template const Eigen::Block<const Jacobian6Dd, 3, 18> Robot<double>::getContactJacobian(const int) const;
-template const Eigen::Block<const Jacobian6Df, 3, 18> Robot<float>::getContactJacobian(const int) const;
+template const Eigen::Block<const Jacobian6Dd, 3, 12> Robot<double>::getContactJacobian(const int) const;
+template const Eigen::Block<const Jacobian6Df, 3, 12> Robot<float>::getContactJacobian(const int) const;
 
 template const Vector18d& Robot<double>::getDynamics() const;
 template const Vector18f& Robot<float>::getDynamics() const;
@@ -103,8 +103,8 @@ template const Vector18f& Robot<float>::getDynamics() const;
 template const Eigen::VectorBlock<const Vector18d, 12> Robot<double>::getJointDynamics() const;
 template const Eigen::VectorBlock<const Vector18f, 12> Robot<float>::getJointDynamics() const;
 
-template const std::array<int, 4>& Robot<double>::contactFrames() const;
-template const std::array<int, 4>& Robot<float>::contactFrames() const;
+template const std::array<int, 4>& Robot<double>::getContactFrames() const;
+template const std::array<int, 4>& Robot<float>::getContactFrames() const;
 
 template class Robot<double>;
 template class Robot<float>;

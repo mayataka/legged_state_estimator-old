@@ -194,10 +194,10 @@ public:
     return contact_frame_velocity_[contact_id];
   }
 
-  const Eigen::Block<const Jacobian6D, 3, 18> getContactJacobian(const int contact_id) const {
+  const Eigen::Block<const Jacobian6D, 3, 12> getContactJacobian(const int contact_id) const {
     assert(contat_id >= 0);
     assert(contat_id < 4);
-    return jac_6d_[contact_id].template topLeftCorner<3, 18>();
+    return jac_6d_[contact_id].template topRightCorner<3, 12>();
   }
 
   const Vector18& getDynamics() const {
@@ -208,7 +208,7 @@ public:
     return tau_.template tail<12>();
   }
 
-  const std::array<int, 4>& contactFrames() const {
+  const std::array<int, 4>& getContactFrames() const {
     return contact_frames_;
   }
 
