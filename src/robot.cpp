@@ -94,32 +94,17 @@ template const Vector3f& Robot<float>::getContactPosition(const int) const;
 template const Vector3d& Robot<double>::getContactVelocity(const int) const;
 template const Vector3f& Robot<float>::getContactVelocity(const int) const;
 
-template const Eigen::Block<const Jacobian6Dd, 3, 18> Robot<double>::getContactJacobian() const;
-template const Eigen::Block<const Jacobian6Df, 3, 18> Robot<float>::getContactJacobian() const;
+template const Eigen::Block<const Jacobian6Dd, 3, 18> Robot<double>::getContactJacobian(const int) const;
+template const Eigen::Block<const Jacobian6Df, 3, 18> Robot<float>::getContactJacobian(const int) const;
 
 template const Vector18d& Robot<double>::getDynamics() const;
 template const Vector18f& Robot<float>::getDynamics() const;
 
+template const Eigen::VectorBlock<const Vector18d, 12> Robot<double>::getJointDynamics() const;
+template const Eigen::VectorBlock<const Vector18f, 12> Robot<float>::getJointDynamics() const;
+
 template const std::array<int, 4>& Robot<double>::contactFrames() const;
 template const std::array<int, 4>& Robot<float>::contactFrames() const;
-
-// template const Vector3d& Robot<double>::getBaseAngularVelocityEstimate() const;
-// template const Vector3f& Robot<float>::getBaseAngularVelocityEstimate() const;
-
-// template const Vector12d& Robot<double>::getJointVelocityEstimate() const;
-// template const Vector12f& Robot<float>::getJointVelocityEstimate() const;
-
-// template const Vector12d& Robot<double>::getJointTorqueEstimate() const;
-// template const Vector12f& Robot<float>::getJointTorqueEstimate() const;
-
-// template double Robot<double>::getContactProbability(const int) const;
-// template float Robot<float>::getContactProbability(const int) const;
-
-// template const Vector4d& Robot<double>::getContactProbability() const;
-// template const Vector4f& Robot<float>::getContactProbability() const;
-
-// template double Robot<double>::getNonContactProbability() const;
-// template float Robot<float>::getNonContactProbability() const;
 
 template class Robot<double>;
 template class Robot<float>;

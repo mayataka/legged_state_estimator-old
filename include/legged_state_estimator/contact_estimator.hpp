@@ -79,13 +79,13 @@ public:
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_CONSTRUCTOR(ContactEstimator);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_ASSIGN_OPERATOR(ContactEstimator);
 
-  void update(const Robot<Scalar>& robot, const Vector12& tau, 
+  void update(const Robot<Scalar>& robot, const Vector12& tauJ, 
               const Vector4& force_sensor_raw) {
     // Estimate contactforce
     for (int i=0; i<4; ++i) {
       contact_force_est_[i].noalias() 
           = - robot.getContactJacobian(i).template block<3, 3>(0, 6+i*3).transpose().inverse() 
-              * (tau.template segment<3>(3*i)-robot.getDynamics().template segment<3>(6+3*i));
+              * (tauJ.template segment<3>(3*i)-robot.getJointDynamics().template segment<3>(3*i));
       contact_force_normal_est_.coeffRef(i) 
           = contact_force_est_[i].dot(contact_surface_normal_[i]);
     }

@@ -121,7 +121,7 @@ public:
   }
 
   void updateKinematics(const Vector3& base_pos, const Vector4& base_quat, 
-                        const Vector3& base_linear_vel,  const Vector3& base_angular_vel, 
+                        const Vector3& base_linear_vel, const Vector3& base_angular_vel, 
                         const Vector12& qJ, const Vector12& dqJ,
                         const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED) {
     q_.template head<3>() = base_pos;
@@ -202,6 +202,10 @@ public:
 
   const Vector18& getDynamics() const {
     return tau_;
+  }
+
+  const Eigen::VectorBlock<const Vector18, 12> getJointDynamics() const {
+    return tau_.template tail<12>();
   }
 
   const std::array<int, 4>& contactFrames() const {

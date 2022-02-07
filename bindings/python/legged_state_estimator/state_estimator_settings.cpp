@@ -19,15 +19,13 @@ PYBIND11_MODULE(state_estimator_settings, m) {
     .def_readwrite("path_to_urdf", &StateEstimatorSettings<double>::path_to_urdf)
     .def_readwrite("contact_frames", &StateEstimatorSettings<double>::contact_frames)
     .def_readwrite("dt", &StateEstimatorSettings<double>::dt)
+    .def_readwrite("force_compl_cutoff_freq", &StateEstimatorSettings<double>::force_compl_cutoff_freq)
+    .def_readwrite("beta1_logistic_reg", &StateEstimatorSettings<double>::beta1_logistic_reg)
+    .def_readwrite("beta0_logistic_reg", &StateEstimatorSettings<double>::beta0_logistic_reg)
     .def_readwrite("force_sensor_bias", &StateEstimatorSettings<double>::force_sensor_bias)
-    .def_readwrite("contact_window_filter_size", &StateEstimatorSettings<double>::contact_window_filter_size)
-    .def_readwrite("contact_probability_beta0", &StateEstimatorSettings<double>::contact_probability_beta0)
-    .def_readwrite("contact_probability_beta1", &StateEstimatorSettings<double>::contact_probability_beta1)
-    .def_readwrite("lpf_dqJ_cutoff", &StateEstimatorSettings<double>::lpf_dqJ_cutoff)
     .def_readwrite("lpf_gyro_cutoff", &StateEstimatorSettings<double>::lpf_gyro_cutoff)
-    .def_readwrite("hpf_contact_frame_pos_cutoff", &StateEstimatorSettings<double>::hpf_contact_frame_pos_cutoff)
-    .def_readwrite("cf_base_lin_vel_cutoff", &StateEstimatorSettings<double>::cf_base_lin_vel_cutoff)
-    .def_readwrite("cf_base_pos_cutoff", &StateEstimatorSettings<double>::cf_base_pos_cutoff);
+    .def_readwrite("lpf_dqJ_cutoff", &StateEstimatorSettings<double>::lpf_dqJ_cutoff)
+    .def_readwrite("lpf_tauJ_cutoff", &StateEstimatorSettings<double>::lpf_dqJ_cutoff);
 }
 
 } // namespace python

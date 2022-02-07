@@ -14,8 +14,8 @@ macro(pybind11_add_legged_state_estimator_module MODULE)
   )
 endmacro()
 
+pybind11_add_legged_state_estimator_module(robot)
 pybind11_add_legged_state_estimator_module(contact_estimator)
-pybind11_add_legged_state_estimator_module(leg_odometry)
 pybind11_add_legged_state_estimator_module(state_estimator_settings)
 pybind11_add_legged_state_estimator_module(state_estimator)
 
