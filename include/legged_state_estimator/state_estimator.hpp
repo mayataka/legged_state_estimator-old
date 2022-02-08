@@ -196,8 +196,8 @@ private:
     ekf_.x_pred.template tail<6>()     = ekf_.x_hat.template tail<6>();
     ekf_.y_pred = ekf_.x_pred.template segment<3>(7);
     ekf_.A.template block<6, 6>(0, 0) = robot_.getBaseJacobianWrtConfiguration();
-    ekf_.A.template block<6, 3>(0, 6) = dt_ * robot_.getBaseJacobianWrtVelocity().template leftCols<3>();
-    ekf_.A.template block<6, 3>(0, 9) = - dt_ * robot_.getBaseJacobianWrtVelocity().template rightCols<3>();
+    ekf_.A.template block<6, 3>(0, 6) = - dt_ * robot_.getBaseJacobianWrtVelocity().template rightCols<3>();
+    ekf_.A.template block<6, 3>(0, 9) = dt_ * robot_.getBaseJacobianWrtVelocity().template leftCols<3>();
     ekf_.A.template block<3, 3>(6, 3).noalias() = - dt_ * R_ * base_linear_acc_nobias_skew_;
     ekf_.A.template block<3, 3>(6, 6).setIdentity();
     ekf_.A.template block<3, 3>(6, 9) = - dt_ * R_;

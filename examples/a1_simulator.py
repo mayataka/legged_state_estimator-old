@@ -2,6 +2,7 @@ import pybullet
 import pybullet_data
 import numpy as np
 import time
+from scipy.spatial.transform import Rotation
 
 
 class A1Simulator:
@@ -14,7 +15,7 @@ class A1Simulator:
         self.camera_pitch = 0.0
         self.camera_target_pos = [0., 0., 0.]
         self.robot = None
-        self.baseLinVel_prev = np.zeros(3)
+        self.baseLinVelPrev = np.zeros(3)
         self.q = np.array([0, 0, 0.3181, 0, 0, 0, 1, 
                            0.0,  0.67, -1.3, 
                            0.0,  0.67, -1.3, 
@@ -59,9 +60,10 @@ class A1Simulator:
 
     def get_imu_state(self):
         basePos, baseOrn, baseLinVel, baseAngVel = self.get_base_state()
-        baseLinAcc = (baseLinVel - self.baseLinVel_prev) / self.time_step
-        self.baseLinVel_prev = baseLinVel
-        return baseAngVel, baseLinAcc
+        baseLinAcc = (baseLinVel - self.baseLinVelPrev) / self.time_step
+        self.baseLinVelPrev = baseLinVel.copy()
+        baseLinAccLocal = Rotation.from_quat(baseOrn).as_matrix().T @ baseLinAcc
+        return baseAngVel, baseLinAccLocal
 
     def get_joint_state(self):
         # joint angles

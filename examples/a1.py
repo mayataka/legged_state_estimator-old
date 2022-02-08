@@ -15,20 +15,15 @@ sim.init()
 for i in range(10000):
     sim.step_simulation()
     if i%1000 == 0:
-        qJ = 0.01 * np.random.normal(12) + sim.qJ_ref
+        qJ = 0.025 * np.random.normal(12) + sim.qJ_ref
         sim.apply_position_command(qJ)
     base_ang_vel, base_lin_acc = sim.get_imu_state()
     qJ, dqJ, tauJ = sim.get_joint_state()
-    print(base_ang_vel)
-    print(base_lin_acc)
-    print(qJ)
-    print(dqJ)
-    print(tauJ)
-    print(est.base_position_estimate)
-    print(est.base_orientation_estimate)
-    print(est.base_linear_velocity_estimate)
     est.update(imu_gyro_raw=base_ang_vel, imu_lin_accel_raw=base_lin_acc, 
                qJ=qJ, dqJ=dqJ, tauJ=tauJ, f=np.zeros(4))
+    # print(est.base_position_estimate)
+    # print(est.base_orientation_estimate)
+    # print(est.base_linear_velocity_estimate)
 
 # from scipy.spatial.transform import Rotation
 # robot = legged_state_estimator.Robot(PATH_TO_URDF, est_settings.contact_frames)
