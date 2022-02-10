@@ -6,9 +6,26 @@ from scipy.spatial.transform import Rotation
 
 
 class A1Simulator:
-    def __init__(self, path_to_urdf, time_step):
+    def __init__(self, path_to_urdf, time_step, 
+                 imu_gyro_noise=0.01, imu_lin_accel_noise=0.1,
+                 imu_gyro_bias_noise=0.00001,
+                 imu_lin_accel_bias_noise=0.00001,
+                 qJ_noise=0.001,
+                 dqJ_noise=0.01,
+                 ddqJ_noise=0.1,
+                 tauJ_noise=0.1):
         self.path_to_urdf = path_to_urdf
         self.time_step = time_step
+        self.imu_gyro_noise = imu_gyro_noise
+        self.imu_lin_accel_noise = imu_lin_accel_noise
+        self.imu_gyro_bias_noise = imu_gyro_bias_noise 
+        self.imu_lin_accel_bias_noise = imu_lin_accel_bias_noise
+        self.qJ_noise = qJ_noise
+        self.dqJ_noise = dqJ_noise
+        self.ddqJ_noise = ddqJ_noise
+        self.tauJ_noise = tauJ_noise
+        self.imu_gyro_bias = np.zeros(3)
+        self.imu_accel_bias = np.zeros(3)
         self.calib_camera = False
         self.camera_distance = 0.0
         self.camera_yaw = 0.0
@@ -65,7 +82,11 @@ class A1Simulator:
         R = Rotation.from_quat(base_orn).as_matrix()
         base_lin_acc_local = R.T @ base_lin_acc_world
         self.base_lin_vel_prev = base_lin_vel.copy()
-        return base_ang_vel, base_lin_acc_local
+        base_ang_vel_noise = np.random.normal(0, self.imu_gyro_noise, 3) 
+        base_lin_acc_noise = np.random.normal(0, self.imu_lin_accel_noise, 3) 
+        self.imu_gyro_bias = self.imu_gyro_bias + np.random.normal(0, self.imu_gyro_bias_noise, 3)
+        self.imu_accel_bias = self.imu_accel_bias + np.random.normal(0, self.imu_lin_accel_bias_noise, 3)
+        return base_ang_vel+base_ang_vel_noise+self.imu_gyro_bias, base_lin_acc_local+base_lin_acc_noise+self.imu_accel_bias
 
     def get_joint_state(self):
         # joint angles
@@ -123,7 +144,11 @@ class A1Simulator:
         tauJ[11] = pybullet.getJointState(self.robot, 15)[3]
         ddqJ = (dqJ - self.dqJ_prev) / self.time_step
         self.dqJ_prev = dqJ
-        return qJ, dqJ, ddqJ, tauJ
+        qJ_noise = np.random.normal(0, self.qJ_noise, 12) 
+        dqJ_noise = np.random.normal(0, self.dqJ_noise, 12) 
+        ddqJ_noise = np.random.normal(0, self.ddqJ_noise, 12) 
+        tauJ_noise = np.random.normal(0, self.tauJ_noise, 12) 
+        return qJ+qJ_noise, dqJ+dqJ_noise, ddqJ+ddqJ_noise, tauJ+tauJ_noise
 
     def apply_torque_command(self, tauJ):
         mode = pybullet.TORQUE_CONTROL

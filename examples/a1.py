@@ -1,6 +1,5 @@
 import a1_simulator
 import numpy as np
-import scipy
 import legged_state_estimator 
 from scipy.spatial.transform import Rotation
 
@@ -29,33 +28,9 @@ for i in range(10000):
                      qJ=qJ, dqJ=dqJ, ddqJ=ddqJ, tauJ=tauJ, f=[0, 0, 0, 0])
     base_pos, base_quat, base_lin_vel, base_ang_vel = sim.get_base_state()
     R_true = Rotation.from_quat(base_quat).as_matrix()
-    diff = Rotation.from_matrix(R_true@estimator.base_rotation_estimate).as_quat()[0:3]
+    diff = Rotation.from_matrix(R_true.T@estimator.base_rotation_estimate).as_quat()[0:3]
     print('base_pos error:', base_pos-estimator.base_position_estimate)
     print('base_orn error:', diff)
     print('base_lin_vel error:', base_lin_vel-estimator.base_linear_velocity_estimate)
     print('contact_probability:', estimator.contact_probability)
     print('contact_force_estimate:', estimator.contact_force_estimate)
-
-    # print(estimator.base_quaternion_estimate)
-    # print(estimator.base_linear_velocity_estimate)
-    # print(estimator.base_angular_velocity_estimate)
-
-# from scipy.spatial.transform import Rotation
-# robot = legged_state_estimator.Robot(PATH_TO_URDF, est_settings.contact_frames)
-# pos = np.zeros(3)
-# sth = np.sin(np.pi/3)
-# cth = np.cos(np.pi/3)
-# # rot = np.array([[cth, -sth, 0],
-# #                 [sth,  cth, 0],
-# #                 [  0,    0, 1]])
-# quat = Rotation.from_matrix(np.eye(3)).as_quat()
-# lin_vel = np.zeros(3)
-# ang_vel = np.array([0, 0, 1])
-# robot.update_base_configuration(pos, quat, lin_vel, ang_vel, 1.0)
-# # print(robot.base_position)
-# print(Rotation.from_quat(robot.base_orientation).as_matrix())
-# # print(robot.base_linear_velocity)
-
-# rot = np.array([[cth, -sth, 0],
-#                 [sth,  cth, 0],
-#                 [  0,    0, 1]])
