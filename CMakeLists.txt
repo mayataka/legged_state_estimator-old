@@ -37,7 +37,7 @@ target_link_libraries(
   ${PROJECT_NAME} 
   PUBLIC
   ${PINOCCHIO_LIBRARIES}
-  ${inekf_LIBRARIES}
+  inekf::inekf
 )
 target_include_directories(
   ${PROJECT_NAME} 

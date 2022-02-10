@@ -40,8 +40,7 @@ public:
       std::exit(EXIT_FAILURE);
     }
     if (dim == Eigen::Dynamic) {
-      estimate_.resize(dim);
-      estimate_.setZero();
+      estimate_.resize(size);
     }
     estimate_.setZero();
   }

@@ -8,8 +8,8 @@ PATH_TO_URDF = "a1_description/urdf/a1.urdf"
 time_step = 0.0025
 sim = a1_simulator.A1Simulator(PATH_TO_URDF, time_step)
 
-est_settings = legged_state_estimator.StateEstimatorSettings.a1_settings(PATH_TO_URDF, time_step)
-est = legged_state_estimator.StateEstimator(est_settings)
+estimator_settings = legged_state_estimator.StateEstimatorSettings.a1_settings(PATH_TO_URDF, time_step)
+estimator = legged_state_estimator.StateEstimator(estimator_settings)
 
 sim.init()
 for i in range(10000):
@@ -19,8 +19,8 @@ for i in range(10000):
         sim.apply_position_command(qJ)
     base_ang_vel, base_lin_acc = sim.get_imu_state()
     qJ, dqJ, tauJ = sim.get_joint_state()
-    est.update(imu_gyro_raw=base_ang_vel, imu_lin_accel_raw=base_lin_acc, 
-               qJ=qJ, dqJ=dqJ, tauJ=tauJ, f=np.zeros(4))
+    estimator.update(imu_gyro_raw=base_ang_vel, imu_lin_accel_raw=base_lin_acc, 
+                     qJ=qJ, dqJ=dqJ, tauJ=tauJ, f=np.zeros(4))
     # print(est.base_position_estimate)
     # print(est.base_orientation_estimate)
     # print(est.base_linear_velocity_estimate)

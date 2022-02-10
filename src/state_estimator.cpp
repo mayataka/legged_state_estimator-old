@@ -14,10 +14,15 @@ StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
     lpf_tauJ_(settings.dt, settings.lpf_tauJ_cutoff, robot_.nJ()),
     dt_(settings.dt),
     imu_raw_(Vector6d::Zero()) {
-  Matrix6d cov_leg;
-  for (int i=0; i<4; ++i) {
+  Matrix6d cov_leg = Matrix6d::Zero();
+  cov_leg.topLeftCorner<3, 3>() = 0.01 * Eigen::Matrix3d::Identity();
+  cov_leg.bottomRightCorner<3, 3>() = 0.001 * Eigen::Matrix3d::Identity();
+  std::cout << "set leg kinematics" << std::endl;
+  for (int i=0; i<settings.contact_frames.size(); ++i) {
+    std::cout << "set leg kinematics" << std::endl;
     inekf_leg_kinematics_.emplace_back(i, Eigen::Matrix4d::Identity(), cov_leg);
   }
+  std::cout << "set leg kinematics" << std::endl;
   imu_raw_.setZero();
 }
 

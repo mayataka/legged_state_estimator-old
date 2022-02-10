@@ -12,6 +12,12 @@ namespace python {
 namespace py = pybind11;
 
 PYBIND11_MODULE(robot, m) {
+  py::enum_<pinocchio::ReferenceFrame>(m, "ReferenceFrame")
+    .value("WORLD", pinocchio::ReferenceFrame::WORLD)
+    .value("LOCAL", pinocchio::ReferenceFrame::LOCAL)
+    .value("LOCAL_WORLD_ALIGNED", pinocchio::ReferenceFrame::LOCAL_WORLD_ALIGNED)
+    .export_values();
+
   py::class_<Robot>(m, "Robot")
     .def(py::init<const std::string&, const std::vector<int>&>(),
           py::arg("path_to_urdf"), py::arg("contact_frames"))

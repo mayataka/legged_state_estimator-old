@@ -58,23 +58,23 @@ public:
                const std::vector<double>& f_raw,
                const Eigen::Vector3d& lin_vel_pred);
 
-  const decltype(auto) getBasePositionEstimate() const {
+  const auto getBasePositionEstimate() const {
     return inekf_.getState().getPosition();
   }
 
-  const decltype(auto) getBaseOrientationEstimate() const {
+  const auto getBaseOrientationEstimate() const {
     return inekf_.getState().getRotation();
   }
 
-  const decltype(auto) getBaseLinearVelocityEstimate() const {
+  const auto getBaseLinearVelocityEstimate() const {
     return inekf_.getState().getVelocity();
   }
 
-  const decltype(auto) getIMUGyroBiasEstimate() const {
+  const auto getIMUGyroBiasEstimate() const {
     return inekf_.getState().getGyroscopeBias();
   }
 
-  const decltype(auto) getIMULinearAccelerationBiasEstimate() const {
+  const auto getIMULinearAccelerationBiasEstimate() const {
     return inekf_.getState().getAccelerometerBias();
   }
 

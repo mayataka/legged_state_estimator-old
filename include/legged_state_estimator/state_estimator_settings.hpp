@@ -38,6 +38,10 @@ public:
     settings.contact_estimator_settings.beta0 = -4.0;
     settings.contact_estimator_settings.beta1 =  0.25;
     settings.contact_estimator_settings.force_sensor_bias = {0.0, 0.0, 0.0, 0.0};
+    settings.contact_estimator_settings.schmitt_trigger_settings.lower_threshold   = 0;
+    settings.contact_estimator_settings.schmitt_trigger_settings.higher_threshold  = 0;
+    settings.contact_estimator_settings.schmitt_trigger_settings.lower_time_delay  = 0;
+    settings.contact_estimator_settings.schmitt_trigger_settings.higher_time_delay = 0;
 
     settings.inekf_noise_params.setGyroscopeNoise(0.01);
     settings.inekf_noise_params.setAccelerometerNoise(0.1);
