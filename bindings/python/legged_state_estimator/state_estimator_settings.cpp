@@ -20,6 +20,8 @@ PYBIND11_MODULE(state_estimator_settings, m) {
     .def_readwrite("contact_frames", &StateEstimatorSettings::contact_frames)
     .def_readwrite("contact_estimator_settings", &StateEstimatorSettings::contact_estimator_settings)
     .def_readwrite("inekf_noise_params", &StateEstimatorSettings::inekf_noise_params)
+    .def_readwrite("contact_position_noise", &StateEstimatorSettings::contact_position_noise)
+    .def_readwrite("contact_rotation_noise", &StateEstimatorSettings::contact_rotation_noise)
     .def_readwrite("dt", &StateEstimatorSettings::dt)
     .def_readwrite("lpf_gyro_cutoff", &StateEstimatorSettings::lpf_gyro_cutoff)
     .def_readwrite("lpf_dqJ_cutoff", &StateEstimatorSettings::lpf_dqJ_cutoff)

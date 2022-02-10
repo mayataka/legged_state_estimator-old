@@ -12,6 +12,10 @@ sim = a1_simulator.A1Simulator(PATH_TO_URDF, TIME_STEP)
 estimator_settings = legged_state_estimator.StateEstimatorSettings.a1_settings(PATH_TO_URDF, TIME_STEP)
 estimator_settings.contact_estimator_settings.beta0 = -4.0
 estimator_settings.contact_estimator_settings.beta1 = 0.25
+estimator_settings.inekf_noise_params.contact_cov = 0.0001 * np.eye(3, 3)
+estimator_settings.contact_position_noise = 0.1 
+estimator_settings.contact_rotation_noise = 0.1 
+estimator_settings.lpf_gyro_cutoff = 250
 estimator = legged_state_estimator.StateEstimator(estimator_settings)
 
 sim.init()
@@ -36,8 +40,8 @@ fig, axes = plt.subplots(2, 2)
 ax_pos, ax_quat, ax_lin_vel, ax_ang_vel = axes[0][0], axes[0][1], axes[1][0], axes[1][1],
 ax_pos.set_ylim([-1., 1.])
 ax_quat.set_ylim([-1.25, 1.25])
-ax_lin_vel.set_ylim([-2., 2.])
-ax_ang_vel.set_ylim([-2., 2.])
+ax_lin_vel.set_ylim([-1., 1.])
+ax_ang_vel.set_ylim([-1., 1.])
 PLT_WINDOW_SIZE = 200
 
 line_pos_x_true, = ax_pos.plot([0], [0], linestyle='solid', color='blue', label='x(est)')
@@ -68,16 +72,16 @@ line_ang_vel_y_est,  = ax_ang_vel.plot([0], [0], linestyle='dashed', color='red'
 line_ang_vel_z_est,  = ax_ang_vel.plot([0], [0], linestyle='dashed', color='green', label='z(true)')
 
 
-for i in range(2000):
+for i in range(5000):
     sim.step_simulation()
     if i%100 == 0:
-        qJ_cmd = 0.015 * np.random.normal(12) + sim.qJ_ref
+        qJ_cmd = 0.01 * np.random.normal(12) + sim.qJ_ref
         sim.apply_position_command(qJ_cmd)
+    # estimate state
     imu_gyro_raw, imu_lin_acc_raw = sim.get_imu_state()
     qJ, dqJ, ddqJ, tauJ = sim.get_joint_state()
     estimator.update(imu_gyro_raw=imu_gyro_raw, imu_lin_accel_raw=imu_lin_acc_raw, 
                      qJ=qJ, dqJ=dqJ, ddqJ=ddqJ, tauJ=tauJ, f=[0, 0, 0, 0])
-
     base_pos_est.append(estimator.base_position_estimate)
     base_quat_est.append(estimator.base_quaternion_estimate)
     base_lin_vel_est.append(estimator.base_linear_velocity_estimate)

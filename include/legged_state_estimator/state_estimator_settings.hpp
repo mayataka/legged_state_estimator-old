@@ -21,6 +21,9 @@ public:
 
   inekf::NoiseParams inekf_noise_params;
 
+  double contact_position_noise;
+  double contact_rotation_noise;
+
   double dt;
 
   double lpf_gyro_cutoff;
@@ -50,6 +53,9 @@ public:
     settings.inekf_noise_params.setGyroscopeBiasNoise(0.00001);
     settings.inekf_noise_params.setAccelerometerBiasNoise(0.0001);
     settings.inekf_noise_params.setContactNoise(0.1);
+
+    settings.contact_position_noise = 0.1;
+    settings.contact_rotation_noise = 0.1;
 
     settings.dt = dt;
 

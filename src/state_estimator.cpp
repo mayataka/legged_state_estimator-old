@@ -18,8 +18,10 @@ StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
     dt_(settings.dt),
     imu_raw_(Vector6d::Zero()) {
   Matrix6d cov_leg = Matrix6d::Zero();
-  cov_leg.topLeftCorner<3, 3>() = 0.01 * Eigen::Matrix3d::Identity();
-  cov_leg.bottomRightCorner<3, 3>() = 0.001 * Eigen::Matrix3d::Identity();
+  const double contact_position_cov = settings.contact_position_noise * settings.contact_position_noise; 
+  const double contact_rotation_cov = settings.contact_rotation_noise * settings.contact_rotation_noise; 
+  cov_leg.topLeftCorner<3, 3>() = contact_position_cov * Eigen::Matrix3d::Identity();
+  cov_leg.bottomRightCorner<3, 3>() = contact_rotation_cov * Eigen::Matrix3d::Identity();
   for (int i=0; i<settings.contact_frames.size(); ++i) {
     inekf_leg_kinematics_.emplace_back(i, Eigen::Matrix4d::Identity(), cov_leg);
   }
