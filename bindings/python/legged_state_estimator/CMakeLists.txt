@@ -20,6 +20,26 @@ pybind11_add_legged_state_estimator_module(contact_estimator)
 pybind11_add_legged_state_estimator_module(state_estimator_settings)
 pybind11_add_legged_state_estimator_module(state_estimator)
 
+macro(pybind11_add_inekf_module MODULE)
+  pybind11_add_module(
+    ${MODULE} 
+    SHARED 
+    ${MODULE}.cpp
+  )
+  target_include_directories(
+    ${MODULE} 
+    PRIVATE
+    ${inekf_INCLUDE_DIRS}
+  )
+  target_link_libraries(
+    ${MODULE} 
+    PRIVATE
+    ${inekf_LIBRARIES}
+  )
+endmacro()
+
+pybind11_add_inekf_module(inekf_noise_params)
+
 macro(install_legged_state_estimator_pybind_module CURRENT_MODULE_DIR)
   file(GLOB PYTHON_BINDINGS_${CURRENT_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/*.cpython*)
   file(GLOB PYTHON_FILES_${CURRENT_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*.py)
