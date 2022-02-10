@@ -26,11 +26,13 @@ for i in range(10000):
     qJ, dqJ, ddqJ, tauJ = sim.get_joint_state()
     estimator.update(imu_gyro_raw=base_ang_vel, imu_lin_accel_raw=base_lin_acc, 
                      qJ=qJ, dqJ=dqJ, ddqJ=ddqJ, tauJ=tauJ, f=[0, 0, 0, 0])
+    # true state
     base_pos, base_quat, base_lin_vel, base_ang_vel = sim.get_base_state()
+    # estimation error 
     R_true = Rotation.from_quat(base_quat).as_matrix()
     diff = Rotation.from_matrix(R_true.T@estimator.base_rotation_estimate).as_quat()[0:3]
     print('base_pos error:', base_pos-estimator.base_position_estimate)
-    print('base_orn error:', diff)
+    print('base_rot error:', diff)
     print('base_lin_vel error:', base_lin_vel-estimator.base_linear_velocity_estimate)
+    print('base_ang_vel error:', base_ang_vel-estimator.base_angular_velocity_estimate)
     print('contact_probability:', estimator.contact_probability)
-    print('contact_force_estimate:', estimator.contact_force_estimate)

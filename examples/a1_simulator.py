@@ -10,10 +10,7 @@ class A1Simulator:
                  imu_gyro_noise=0.01, imu_lin_accel_noise=0.1,
                  imu_gyro_bias_noise=0.00001,
                  imu_lin_accel_bias_noise=0.00001,
-                 qJ_noise=0.001,
-                 dqJ_noise=0.01,
-                 ddqJ_noise=0.1,
-                 tauJ_noise=0.1):
+                 qJ_noise=0.001, dqJ_noise=0.01, ddqJ_noise=0.1, tauJ_noise=0.1):
         self.path_to_urdf = path_to_urdf
         self.time_step = time_step
         self.imu_gyro_noise = imu_gyro_noise
