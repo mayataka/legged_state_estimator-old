@@ -26,14 +26,6 @@ SchmittTrigger::SchmittTrigger()
 SchmittTrigger::~SchmittTrigger() {}
 
 
-void SchmittTrigger::setParameters(const SchmittTriggerSettings& settings) {
-  lower_threshold_ = settings.lower_threshold;
-  higher_threshold_ = settings.higher_threshold;
-  lower_time_delay_ = settings.lower_time_delay; 
-  higher_time_delay_ = settings.higher_time_delay;
-}
-
-
 void SchmittTrigger::reset() {
   state_ = false;
   previous_time_ = 0; 
@@ -74,6 +66,14 @@ void SchmittTrigger::update(const uint64_t current_time, const double value) {
 
 bool SchmittTrigger::getState() const {
   return state_;
+}
+
+
+void SchmittTrigger::setParameters(const SchmittTriggerSettings& settings) {
+  lower_threshold_ = settings.lower_threshold;
+  higher_threshold_ = settings.higher_threshold;
+  lower_time_delay_ = settings.lower_time_delay; 
+  higher_time_delay_ = settings.higher_time_delay;
 }
 
 }

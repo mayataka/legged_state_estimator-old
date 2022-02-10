@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "inekf/NoiseParams.h"
+
 #include "legged_state_estimator/macros.hpp"
 #include "legged_state_estimator/contact_estimator.hpp"
 
@@ -23,6 +25,7 @@ public:
 
   double lpf_gyro_cutoff;
   double lpf_dqJ_cutoff;
+  double lpf_ddqJ_cutoff;
   double lpf_tauJ_cutoff;
 
 
@@ -46,6 +49,7 @@ public:
 
     settings.lpf_gyro_cutoff = 250;
     settings.lpf_dqJ_cutoff  = 250;
+    settings.lpf_ddqJ_cutoff = 250;
     settings.lpf_tauJ_cutoff = 250;
 
     return settings;

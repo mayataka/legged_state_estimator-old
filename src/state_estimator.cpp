@@ -10,7 +10,7 @@ StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
     contact_estimator_(robot_, settings.contact_estimator_settings),
     lpf_gyro_(settings.dt, settings.lpf_gyro_cutoff),
     lpf_dqJ_(settings.dt, settings.lpf_dqJ_cutoff, robot_.nJ()),
-    lpf_ddqJ_(settings.dt, settings.lpf_dqJ_cutoff, robot_.nJ()),
+    lpf_ddqJ_(settings.dt, settings.lpf_ddqJ_cutoff, robot_.nJ()),
     lpf_tauJ_(settings.dt, settings.lpf_tauJ_cutoff, robot_.nJ()),
     dt_(settings.dt),
     imu_raw_(Vector6d::Zero()) {

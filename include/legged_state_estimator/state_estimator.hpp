@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <array>
 #include <cstdio>
 #include <limits>
 
@@ -85,6 +84,10 @@ public:
 
   const decltype(auto) getJointVelocityEstimate() const {
     return lpf_dqJ_.getEstimate();
+  }
+
+  const decltype(auto) getJointAccelerationEstimate() const {
+    return lpf_ddqJ_.getEstimate();
   }
 
   const decltype(auto) getJointTorqueEstimate() const {

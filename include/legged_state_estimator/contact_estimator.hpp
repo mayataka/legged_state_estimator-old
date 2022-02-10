@@ -41,8 +41,12 @@ public:
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_CONSTRUCTOR(ContactEstimator);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_ASSIGN_OPERATOR(ContactEstimator);
 
+  void reset();
+
   void update(Robot& robot, const Eigen::VectorXd& tauJ, 
               const std::vector<double>& force_sensor_raw);
+
+  void setParameters(const ContactEstimatorSettings& settings);
 
   std::vector<std::pair<int, bool>> getContactState(const double prob_threshold=0.5) const;
 

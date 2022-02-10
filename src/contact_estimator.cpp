@@ -31,6 +31,13 @@ ContactEstimator::~ContactEstimator() {
 }
 
 
+void ContactEstimator::reset() {
+  for (int i=0; i<num_contacts_; ++i) {
+    schmitt_trigger_[i].reset();
+  }
+}
+
+
 void ContactEstimator::update(Robot& robot, const Eigen::VectorXd& tauJ, 
                               const std::vector<double>& force_sensor_raw) {
   // Estimate contact force from robot dynamics 
@@ -53,6 +60,14 @@ void ContactEstimator::update(Robot& robot, const Eigen::VectorXd& tauJ,
   // for (int i=0; i<num_contacts_; ++i) {
   //   schmitt_trigger_[i].update(force_sensor_raw[i]);
   // }
+}
+
+
+void ContactEstimator::setParameters(const ContactEstimatorSettings& settings) {
+  settings_ = settings;
+  for (auto& e : schmitt_trigger_) {
+    e.setParameters(settings.schmitt_trigger_settings);
+  }
 }
 
 

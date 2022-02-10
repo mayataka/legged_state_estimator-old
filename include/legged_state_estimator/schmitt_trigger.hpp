@@ -29,13 +29,13 @@ public:
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_CONSTRUCTOR(SchmittTrigger);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_ASSIGN_OPERATOR(SchmittTrigger);
 
-  void setParameters(const SchmittTriggerSettings& settings);
-
   void reset();
 
   void update(const uint64_t current_time, const double value);
 
   bool getState() const;
+
+  void setParameters(const SchmittTriggerSettings& settings);
 
 private:
   bool state_, first_call_;
