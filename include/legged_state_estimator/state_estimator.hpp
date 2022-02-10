@@ -25,7 +25,9 @@ namespace legged_state_estimator {
 
 class StateEstimator {
 public:
+  using Vector3d = Eigen::Matrix<double, 3, 1>;
   using Vector6d = Eigen::Matrix<double, 6, 1>;
+  using Matrix3d = Eigen::Matrix<double, 3, 3>;
   using Matrix6d = Eigen::Matrix<double, 6, 6>;
 
   StateEstimator(const StateEstimatorSettings& settings);
@@ -103,9 +105,11 @@ private:
   Robot robot_;
   ContactEstimator contact_estimator_;
   LowPassFilter<double, Eigen::Dynamic> lpf_dqJ_, lpf_ddqJ_, lpf_tauJ_;
-  LowPassFilter<double, 3> lpf_gyro_;
+  LowPassFilter<double, 3> lpf_gyro_, lpf_gyro_accel_;
   double dt_;
+  Vector3d gyro_world_, gyro_world_prev_, gyro_accel_world_, gyro_accel_local_;
   Vector6d imu_raw_;
+  Matrix3d R_;
 };
 
 } // namespace legged_state_estimator

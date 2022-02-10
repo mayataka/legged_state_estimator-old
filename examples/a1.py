@@ -18,9 +18,9 @@ for i in range(10000):
         qJ = 0.025 * np.random.normal(12) + sim.qJ_ref
         sim.apply_position_command(qJ)
     base_ang_vel, base_lin_acc = sim.get_imu_state()
-    qJ, dqJ, tauJ = sim.get_joint_state()
+    qJ, dqJ, ddqJ, tauJ = sim.get_joint_state()
     estimator.update(imu_gyro_raw=base_ang_vel, imu_lin_accel_raw=base_lin_acc, 
-                     qJ=qJ, dqJ=dqJ, tauJ=tauJ, f=np.zeros(4))
+                     qJ=qJ, dqJ=dqJ, ddqJ=ddqJ, tauJ=tauJ, f=[0, 0, 0, 0])
     # print(est.base_position_estimate)
     # print(est.base_orientation_estimate)
     # print(est.base_linear_velocity_estimate)

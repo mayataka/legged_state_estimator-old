@@ -15,7 +15,7 @@ class A1Simulator:
         self.camera_pitch = 0.0
         self.camera_target_pos = [0., 0., 0.]
         self.robot = None
-        self.baseLinVelPrev = np.zeros(3)
+        self.base_lin_vel_prev = np.zeros(3)
         self.q = np.array([0, 0, 0.3181, 0, 0, 0, 1, 
                            0.0,  0.67, -1.3, 
                            0.0,  0.67, -1.3, 
@@ -25,6 +25,7 @@ class A1Simulator:
                                 0.0,  0.67, -1.3, 
                                 0.0,  0.67, -1.3, 
                                 0.0,  0.67, -1.3])
+        self.dqJ_prev = np.zeros(12)
 
     def set_urdf(self, path_to_urdf):
         self.path_to_urdf = path_to_urdf
@@ -46,7 +47,7 @@ class A1Simulator:
         plane = pybullet.loadURDF("plane.urdf")
         self.robot = pybullet.loadURDF(self.path_to_urdf,  
                                        useFixedBase=False, 
-                                        useMaximalCoordinates=False)
+                                       useMaximalCoordinates=False)
         self.init_state(self.q[0:3], self.q[3:7], self.q[7:19])
 
     def step_simulation(self):
@@ -54,16 +55,17 @@ class A1Simulator:
         time.sleep(self.time_step)
 
     def get_base_state(self):
-        basePos, baseOrn = pybullet.getBasePositionAndOrientation(self.robot)
-        baseLinVel, baseAngVel = pybullet.getBaseVelocity(self.robot)
-        return np.array(basePos), np.array(baseOrn), np.array(baseLinVel), np.array(baseAngVel)
+        base_pos, base_orn = pybullet.getBasePositionAndOrientation(self.robot)
+        base_lin_vel, base_ang_vel = pybullet.getBaseVelocity(self.robot)
+        return np.array(base_pos), np.array(base_orn), np.array(base_lin_vel), np.array(base_ang_vel)
 
     def get_imu_state(self):
-        basePos, baseOrn, baseLinVel, baseAngVel = self.get_base_state()
-        baseLinAcc = (baseLinVel - self.baseLinVelPrev) / self.time_step
-        self.baseLinVelPrev = baseLinVel.copy()
-        baseLinAccLocal = Rotation.from_quat(baseOrn).as_matrix().T @ baseLinAcc
-        return baseAngVel, baseLinAccLocal
+        base_pos, base_orn, base_lin_vel, base_ang_vel = self.get_base_state()
+        base_lin_acc_world = (base_lin_vel - self.base_lin_vel_prev) / self.time_step
+        R = Rotation.from_quat(base_orn).as_matrix()
+        base_lin_acc_local = R.T @ base_lin_acc_world
+        self.base_lin_vel_prev = base_lin_vel.copy()
+        return base_ang_vel, base_lin_acc_local
 
     def get_joint_state(self):
         # joint angles
@@ -119,7 +121,9 @@ class A1Simulator:
         tauJ[9] = pybullet.getJointState(self.robot, 12)[3]
         tauJ[10] = pybullet.getJointState(self.robot, 14)[3]
         tauJ[11] = pybullet.getJointState(self.robot, 15)[3]
-        return qJ, dqJ, tauJ
+        ddqJ = (dqJ - self.dqJ_prev) / self.time_step
+        self.dqJ_prev = dqJ
+        return qJ, dqJ, ddqJ, tauJ
 
     def apply_torque_command(self, tauJ):
         mode = pybullet.TORQUE_CONTROL
