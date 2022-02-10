@@ -13,6 +13,9 @@ ContactEstimator::ContactEstimator(const Robot& robot,
     schmitt_trigger_(robot.numContacts(), 
                      SchmittTrigger(settings.schmitt_trigger_settings)),
     num_contacts_(robot.numContacts()) {
+  for (auto& e : contact_surface_normal_) {
+    e << 0, 0, 1;
+  }
 }
 
 

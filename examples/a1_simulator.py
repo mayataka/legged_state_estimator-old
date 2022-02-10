@@ -61,7 +61,7 @@ class A1Simulator:
 
     def get_imu_state(self):
         base_pos, base_orn, base_lin_vel, base_ang_vel = self.get_base_state()
-        base_lin_acc_world = (base_lin_vel - self.base_lin_vel_prev) / self.time_step
+        base_lin_acc_world = (base_lin_vel - self.base_lin_vel_prev) / self.time_step + np.array([0, 0, 9.81])
         R = Rotation.from_quat(base_orn).as_matrix()
         base_lin_acc_local = R.T @ base_lin_acc_world
         self.base_lin_vel_prev = base_lin_vel.copy()
@@ -147,7 +147,7 @@ class A1Simulator:
     def apply_position_command(self, qJ):
         mode = pybullet.POSITION_CONTROL
         maxForce = 30
-        Kp = 0.05
+        Kp = 0.01
         Kd = 0.0001
         # LFL
         pybullet.setJointMotorControl2(self.robot, 7, controlMode=mode, targetPosition=qJ[0], positionGain=Kp, force=maxForce)

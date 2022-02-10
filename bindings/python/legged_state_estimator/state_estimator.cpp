@@ -28,14 +28,17 @@ PYBIND11_MODULE(state_estimator, m) {
           py::arg("qJ"), py::arg("dqJ"), py::arg("ddqJ"), py::arg("tauJ"), 
           py::arg("f"), py::arg("lin_vel_pred"))
     .def_property_readonly("base_position_estimate", &StateEstimator::getBasePositionEstimate)
-    .def_property_readonly("base_orientation_estimate", &StateEstimator::getBaseOrientationEstimate)
+    .def_property_readonly("base_rotation_estimate", &StateEstimator::getBaseRotationEstimate)
+    .def_property_readonly("base_quaternion_estimate", &StateEstimator::getBaseQuaternionEstimate)
     .def_property_readonly("base_linear_velocity_estimate", &StateEstimator::getBaseLinearVelocityEstimate)
+    .def_property_readonly("base_angular_velocity_estimate", &StateEstimator::getBaseAngularVelocityEstimate)
     .def_property_readonly("imu_gyro_bias_estimate", &StateEstimator::getIMUGyroBiasEstimate)
     .def_property_readonly("imu_linear_acceleration_bias_estimate", &StateEstimator::getIMULinearAccelerationBiasEstimate)
-    .def_property_readonly("base_angular_velocity_estimate", &StateEstimator::getBaseAngularVelocityEstimate)
     .def_property_readonly("joint_velocity_estimate", &StateEstimator::getJointVelocityEstimate)
     .def_property_readonly("joint_acceleration_estimate", &StateEstimator::getJointAccelerationEstimate)
-    .def_property_readonly("joint_torque_estimate", &StateEstimator::getJointTorqueEstimate);
+    .def_property_readonly("joint_torque_estimate", &StateEstimator::getJointTorqueEstimate)
+    .def_property_readonly("contact_force_estimate", &StateEstimator::getContactForceEstimate)
+    .def_property_readonly("contact_probability", &StateEstimator::getContactProbability);
 }
 
 } // namespace python

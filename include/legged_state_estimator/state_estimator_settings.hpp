@@ -25,6 +25,7 @@ public:
 
   double lpf_gyro_cutoff;
   double lpf_gyro_accel_cutoff;
+  double lpf_lin_accel_cutoff;
   double lpf_dqJ_cutoff;
   double lpf_ddqJ_cutoff;
   double lpf_tauJ_cutoff;
@@ -54,6 +55,7 @@ public:
 
     settings.lpf_gyro_cutoff       = 250;
     settings.lpf_gyro_accel_cutoff = 250;
+    settings.lpf_lin_accel_cutoff  = 250;
     settings.lpf_dqJ_cutoff        = 250;
     settings.lpf_ddqJ_cutoff       = 250;
     settings.lpf_tauJ_cutoff       = 250;
