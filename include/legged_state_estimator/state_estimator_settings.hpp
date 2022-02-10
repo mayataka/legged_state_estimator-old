@@ -3,62 +3,50 @@
 
 #include <string>
 #include <vector>
-#include <array>
 
 #include "legged_state_estimator/macros.hpp"
-#include "legged_state_estimator/types.hpp"
+#include "legged_state_estimator/contact_estimator.hpp"
 
 
 namespace legged_state_estimator {
 
-template <typename Scalar>
 struct StateEstimatorSettings {
 public:
-  using Vector4  = types::Vector4<Scalar>;
-
   std::string path_to_urdf;
-  std::array<int, 4> contact_frames;
+  std::vector<int> contact_frames;
 
-  Scalar dt;
+  ContactEstimatorSettings contact_estimator_settings;
 
-  Scalar force_compl_cutoff_freq;
-  Scalar beta1_logistic_reg; 
-  Scalar beta0_logistic_reg;
-  Vector4 force_sensor_bias;
+  inekf::NoiseParams inekf_noise_params;
 
-  Scalar lpf_gyro_cutoff;
-  Scalar lpf_dqJ_cutoff;
-  Scalar lpf_tauJ_cutoff;
+  double dt;
 
-  Scalar cov_angular_vel;
-  Scalar cov_linear_acc;
-  Scalar cov_dqJ;
+  double lpf_gyro_cutoff;
+  double lpf_dqJ_cutoff;
+  double lpf_tauJ_cutoff;
+
 
   static StateEstimatorSettings A1Settings(const std::string& path_to_urdf, 
-                                           const Scalar dt) {
+                                           const double dt) {
     StateEstimatorSettings settings;
     settings.path_to_urdf = path_to_urdf;
+    settings.contact_frames = {14, 24, 34, 44};
+
+    settings.contact_estimator_settings.beta0 = -4.0;
+    settings.contact_estimator_settings.beta1 =  0.25;
+    settings.contact_estimator_settings.force_sensor_bias = {0.0, 0.0, 0.0, 0.0};
+
+    settings.inekf_noise_params.setGyroscopeNoise(0.01);
+    settings.inekf_noise_params.setAccelerometerNoise(0.1);
+    settings.inekf_noise_params.setGyroscopeBiasNoise(0.00001);
+    settings.inekf_noise_params.setAccelerometerBiasNoise(0.0001);
+    settings.inekf_noise_params.setContactNoise(0.1);
+
     settings.dt = dt;
-
-    // unitree a1
-    int FL_foot = 14;
-    int FR_foot = 24;
-    int RL_foot = 34;
-    int RR_foot = 44;
-    settings.contact_frames = {FL_foot, FR_foot, RL_foot, RR_foot};
-
-    settings.force_compl_cutoff_freq = 100;
-    settings.beta0_logistic_reg = -4.0;
-    settings.beta1_logistic_reg = 0.25;
-    settings.force_sensor_bias << 0.0, 0.0, 0.0, 0.0;
 
     settings.lpf_gyro_cutoff = 250;
     settings.lpf_dqJ_cutoff  = 250;
     settings.lpf_tauJ_cutoff = 250;
-
-    settings.cov_angular_vel = 0.1;
-    settings.cov_linear_acc  = 0.1;
-    settings.cov_dqJ         = 0.001;
 
     return settings;
   }

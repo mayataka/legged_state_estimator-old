@@ -1,112 +1,182 @@
 #include "legged_state_estimator/robot.hpp"
-#include "legged_state_estimator/types.hpp"
 
 
 namespace legged_state_estimator {
 
-using Vector19d = types::Vector19<double>;
-using Vector18d = types::Vector18<double>;
-using Vector16d = types::Vector16<double>;
-using Vector12d = types::Vector12<double>;
-using Vector4d = types::Vector4<double>;
-using Vector3d = types::Vector3<double>;
-using Quaterniond = types::Quaternion<double>;
-using Jacobian6Dd = types::Matrix<double, 6, 18>;
+Robot::Robot(const std::string& path_to_urdf, 
+             const std::vector<int>& contact_frames) 
+  : contact_frames_(contact_frames),
+    model_(),
+    data_(),
+    q_(),
+    v_(),
+    a_(),
+    tau_(),
+    jac_6d_() {
+  pinocchio::urdf::buildModel(path_to_urdf, 
+                              pinocchio::JointModelFreeFlyer(), model_);
+  data_ = pinocchio::Data(model_);
+  q_   = Eigen::VectorXd(model_.nq);
+  v_   = Eigen::VectorXd(model_.nv);
+  a_   = Eigen::VectorXd(model_.nv);
+  tau_ = Eigen::VectorXd(model_.nv);
+  for (int i=0; i<contact_frames.size(); ++i) {
+    jac_6d_.push_back(Eigen::MatrixXd::Zero(6, model_.nv));
+  }
+}
 
-using Vector19f = types::Vector19<float>;
-using Vector18f = types::Vector18<float>;
-using Vector16f = types::Vector16<float>;
-using Vector12f = types::Vector12<float>;
-using Vector4f = types::Vector4<float>;
-using Vector3f = types::Vector3<float>;
-using Quaternionf = types::Quaternion<float>;
-using Jacobian6Df = types::Matrix<float, 6, 18>;
 
-template Robot<double>::Robot(const std::string&, const std::array<int, 4>&);
-template Robot<float>::Robot(const std::string&, const std::array<int, 4>&);
+Robot::Robot() 
+  : contact_frames_(),
+    model_(),
+    data_(),
+    q_(),
+    v_(),
+    a_(),
+    tau_(),
+    jac_6d_() {
+}
 
-template Robot<double>::Robot();
-template Robot<float>::Robot();
 
-template Robot<double>::~Robot();
-template Robot<float>::~Robot();
+Robot::~Robot() {}
 
-template void Robot<double>::updateBaseConfiguration(const Vector3d&, const Vector4d&, 
-                                                     const Vector3d&, const Vector3d&, 
-                                                     const double);
-template void Robot<float>::updateBaseConfiguration(const Vector3f&, const Vector4f&, 
-                                                    const Vector3f&, const Vector3f&, 
-                                                    const float);
 
-template void Robot<double>::updateBaseKinematics(const Vector3d&, const Vector4d&, 
-                                                  const Vector3d&, const Vector3d&, 
-                                                  const Vector3d&, const double);
-template void Robot<float>::updateBaseKinematics(const Vector3f&, const Vector4f&, 
-                                                 const Vector3f&, const Vector3f&, 
-                                                 const Vector3f&, const float);
+void Robot::updateLegKinematics(const Eigen::VectorXd& qJ, 
+                                const Eigen::VectorXd& dqJ,
+                                const pinocchio::ReferenceFrame rf) {
+  updateKinematics(Eigen::Vector3d::Zero(), 
+                   Eigen::Quaterniond::Identity().coeffs(), 
+                   Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), 
+                   qJ, dqJ, rf);
+}
 
-template void Robot<double>::updateLegKinematics(const Vector3d&, const Vector12d&, 
-                                                 const Vector12d&, const pinocchio::ReferenceFrame);
-template void Robot<float>::updateLegKinematics(const Vector3f&, const Vector12f&,
-                                                const Vector12f&, const pinocchio::ReferenceFrame);
 
-template void Robot<double>::updateKinematics(const Vector3d&, const Vector4d&, 
-                                              const Vector3d&, const Vector3d&, 
-                                              const Vector12d&, const Vector12d&, 
-                                              const pinocchio::ReferenceFrame);
-template void Robot<float>::updateKinematics(const Vector3f&, const Vector4f&, 
-                                             const Vector3f&, const Vector3f&, 
-                                             const Vector12f&, const Vector12f&, 
-                                             const pinocchio::ReferenceFrame);
+void Robot::updateKinematics(const Eigen::Vector3d& base_pos, 
+                             const Eigen::Vector4d& base_quat, 
+                             const Eigen::Vector3d& base_linear_vel, 
+                             const Eigen::Vector3d& base_angular_vel, 
+                             const Eigen::VectorXd& qJ, 
+                             const Eigen::VectorXd& dqJ, 
+                             const pinocchio::ReferenceFrame rf) {
+  q_.template head<3>()     = base_pos;
+  q_.template segment<4>(3) = base_quat;
+  v_.template head<3>()     = base_linear_vel;
+  v_.template segment<3>(3) = base_angular_vel;
+  q_.tail(model_.nq-7) = qJ;
+  v_.tail(model_.nv-6) = dqJ;
+  pinocchio::normalize(model_, q_);
+  pinocchio::forwardKinematics(model_, data_, q_, v_);
+  pinocchio::updateFramePlacements(model_, data_);
+  pinocchio::computeJointJacobians(model_, data_, q_);
+  for (int i=0; i<contact_frames_.size(); ++i) {
+    pinocchio::getFrameJacobian(model_, data_, contact_frames_[i], rf, jac_6d_[i]);
+  }
+}
 
-template void Robot<double>::updateLegDynamics(const Vector12d&, const Vector12d&, 
-                                               const Vector3d&, const Vector3d&);
-template void Robot<float>::updateLegDynamics(const Vector12f&, const Vector12f&, 
-                                              const Vector3f&, const Vector3f&);
 
-template void Robot<double>::updateDynamics(const Vector3d&, const Vector4d&,
-                                            const Vector3d&, const Vector3d&, 
-                                            const Vector12d&, const Vector12d&, 
-                                            const Vector3d&, const Vector3d&);
-template void Robot<float>::updateDynamics(const Vector3f&, const Vector4f&,
-                                           const Vector3f&, const Vector3f&, 
-                                           const Vector12f&, const Vector12f&, 
-                                           const Vector3f&, const Vector3f&);
+void Robot::updateLegDynamics(const Eigen::VectorXd& qJ, 
+                              const Eigen::VectorXd& dqJ, 
+                              const Eigen::VectorXd& ddqJ) {
+  updateDynamics(Eigen::Vector3d::Zero(), 
+                 Eigen::Quaterniond::Identity().coeffs(), 
+                 Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), 
+                 Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), 
+                 qJ, dqJ, ddqJ);
+}
 
-template const Eigen::VectorBlock<const Vector19d, 3> Robot<double>::getBasePosition() const;
-template const Eigen::VectorBlock<const Vector19f, 3> Robot<float>::getBasePosition() const;
 
-template const Eigen::VectorBlock<const Vector19d, 4> Robot<double>::getBaseOrientation() const;
-template const Eigen::VectorBlock<const Vector19f, 4> Robot<float>::getBaseOrientation() const;
+void Robot::updateDynamics(const Eigen::Vector3d& base_pos, 
+                           const Eigen::Vector4d& base_quat, 
+                           const Eigen::Vector3d& base_linear_vel, 
+                           const Eigen::Vector3d& base_angular_vel, 
+                           const Eigen::Vector3d& base_linear_acc, 
+                           const Eigen::Vector3d& base_angular_acc,
+                           const Eigen::VectorXd& qJ, 
+                           const Eigen::VectorXd& dqJ,
+                           const Eigen::VectorXd& ddqJ) {
+  q_.template head<3>()     = base_pos;
+  q_.template segment<4>(3) = base_quat;
+  v_.template head<3>()     = base_linear_vel;
+  v_.template segment<3>(3) = base_angular_vel;
+  a_.template head<3>()     = base_linear_acc;
+  a_.template segment<3>(3) = base_angular_acc;
+  q_.tail(model_.nq-7) = qJ;
+  v_.tail(model_.nv-6) = dqJ;
+  a_.tail(model_.nv-6) = ddqJ;
+  tau_ = pinocchio::rnea(model_, data_, q_, v_, a_);
+}
 
-template const Vector3d& Robot<double>::getBaseLinearVelocity() const;
-template const Vector3f& Robot<float>::getBaseLinearVelocity() const;
 
-template const Eigen::Block<const Jacobian6Dd, 6, 6> Robot<double>::getBaseJacobianWrtConfiguration() const;
-template const Eigen::Block<const Jacobian6Df, 6, 6> Robot<float>::getBaseJacobianWrtConfiguration() const;
+const Eigen::Vector3d& Robot::getBasePosition() const {
+  return data_.oMf[1].translation();
+}
 
-template const Eigen::Block<const Jacobian6Dd, 6, 6> Robot<double>::getBaseJacobianWrtVelocity() const;
-template const Eigen::Block<const Jacobian6Df, 6, 6> Robot<float>::getBaseJacobianWrtVelocity() const;
 
-template const Vector3d& Robot<double>::getContactPosition(const int) const;
-template const Vector3f& Robot<float>::getContactPosition(const int) const;
+const Eigen::Matrix3d& Robot::getBaseRotation() const {
+  return data_.oMf[1].rotation();
+}
 
-template const Vector3d& Robot<double>::getContactVelocity(const int) const;
-template const Vector3f& Robot<float>::getContactVelocity(const int) const;
 
-template const Eigen::Block<const Jacobian6Dd, 3, 12> Robot<double>::getContactJacobian(const int) const;
-template const Eigen::Block<const Jacobian6Df, 3, 12> Robot<float>::getContactJacobian(const int) const;
+const Eigen::Vector3d& Robot::getContactPosition(const int contact_id) const {
+  assert(contat_id >= 0);
+  assert(contat_id < contact_frames_.size());
+  return data_.oMf[contact_frames_[contact_id]].translation();
+}
 
-template const Vector18d& Robot<double>::getDynamics() const;
-template const Vector18f& Robot<float>::getDynamics() const;
 
-template const Eigen::VectorBlock<const Vector18d, 12> Robot<double>::getJointDynamics() const;
-template const Eigen::VectorBlock<const Vector18f, 12> Robot<float>::getJointDynamics() const;
+const Eigen::Matrix3d& Robot::getContactRotation(const int contact_id) const {
+  assert(contat_id >= 0);
+  assert(contat_id < contact_frames_.size());
+  return data_.oMf[contact_frames_[contact_id]].rotation();
+}
 
-template const std::array<int, 4>& Robot<double>::getContactFrames() const;
-template const std::array<int, 4>& Robot<float>::getContactFrames() const;
 
-template class Robot<double>;
-template class Robot<float>;
+const Eigen::Block<const Eigen::MatrixXd> Robot::getContactJacobian(const int contact_id) const {
+  assert(contat_id >= 0);
+  assert(contat_id < contact_frames_.size());
+  return jac_6d_[contact_id].topRows(3);
+}
+
+
+const Eigen::Block<const Eigen::MatrixXd> Robot::getJointContactJacobian(const int contact_id) const {
+  assert(contat_id >= 0);
+  assert(contat_id < contact_frames_.size());
+  return jac_6d_[contact_id].topRightCorner(3, nJ());
+}
+
+
+const Eigen::VectorXd& Robot::getInverseDynamics() const {
+  return tau_;
+}
+
+
+const Eigen::VectorBlock<const Eigen::VectorXd> Robot::getJointInverseDynamics() const {
+  return tau_.tail(nJ());
+}
+
+
+const std::vector<int>& Robot::getContactFrames() const {
+  return contact_frames_;
+}
+
+
+int Robot::nq() const {
+  return model_.nq;
+}
+
+
+int Robot::nv() const {
+  return model_.nv;
+}
+
+
+int Robot::nJ() const {
+  return model_.nv-6;
+}
+
+
+int Robot::numContacts() const {
+  return contact_frames_.size();
+}
 
 } // namespace legged_state_estimator

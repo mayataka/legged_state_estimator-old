@@ -5,19 +5,21 @@
 #include <stdexcept>
 #include <iostream>
 
+#include "Eigen/Core"
+
 #include "legged_state_estimator/macros.hpp"
-#include "legged_state_estimator/types.hpp"
 
 
 namespace legged_state_estimator {
 
-template <typename Scalar, int dim>
+template <typename Scalar, int dim=Eigen::Dynamic>
 class LowPassFilter {
 public:
-  using Vector = types::Vector<Scalar, dim>;
+  using Vector = Eigen::Matrix<Scalar, dim, 1>;
 
-  LowPassFilter(const Scalar sampling_time, const Scalar cutoff_freq)
-    : est_(Vector::Zero()),
+  LowPassFilter(const Scalar sampling_time, const Scalar cutoff_freq,
+                const int size=0)
+    : estimate_(),
       alpha_(1.0-std::exp(-sampling_time*2.0*M_PI*cutoff_freq)) {
     try {
       if (sampling_time <= 0) {
@@ -28,15 +30,24 @@ public:
         throw std::out_of_range(
             "Invalid argment: cutoff_freq must be positive!");
       }
+      if (dim == Eigen::Dynamic && size <= 0) {
+        throw std::out_of_range(
+            "Invalid argment: size must be positive!");
+      }
     }
     catch(const std::exception& e) {
       std::cerr << e.what() << '\n';
       std::exit(EXIT_FAILURE);
     }
+    if (dim == Eigen::Dynamic) {
+      estimate_.resize(dim);
+      estimate_.setZero();
+    }
+    estimate_.setZero();
   }
 
   LowPassFilter()
-    : est_(Vector::Zero()),
+    : estimate_(),
       alpha_(0.0) {
   }
 
@@ -48,28 +59,27 @@ public:
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_ASSIGN_OPERATOR(LowPassFilter);
 
   void reset() {
-    est_.setZero();
+    estimate_.setZero();
   }
 
-  void reset(const Vector& est) {
-    est_ = est;
+  void reset(const Vector& estimate) {
+    estimate_ = estimate;
   }
 
   void update(const Vector& obs) {
-    est_.array() *= alpha_;
-    est_.noalias() += (1.0-alpha_) * obs;
+    estimate_.array() *= alpha_;
+    estimate_.noalias() += (1.0-alpha_) * obs;
   }
 
   const Vector& getEstimate() const {
-    return est_;
+    return estimate_;
   }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private:
-  Vector est_;
+  Vector estimate_;
   Scalar alpha_;
-
 };
 
 }
