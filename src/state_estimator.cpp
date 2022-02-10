@@ -2,6 +2,7 @@
 
 
 namespace legged_state_estimator {
+
 StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
   : inekf_(settings.inekf_noise_params),
     inekf_state_(),
@@ -19,12 +20,9 @@ StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
   Matrix6d cov_leg = Matrix6d::Zero();
   cov_leg.topLeftCorner<3, 3>() = 0.01 * Eigen::Matrix3d::Identity();
   cov_leg.bottomRightCorner<3, 3>() = 0.001 * Eigen::Matrix3d::Identity();
-  std::cout << "set leg kinematics" << std::endl;
   for (int i=0; i<settings.contact_frames.size(); ++i) {
-    std::cout << "set leg kinematics" << std::endl;
     inekf_leg_kinematics_.emplace_back(i, Eigen::Matrix4d::Identity(), cov_leg);
   }
-  std::cout << "set leg kinematics" << std::endl;
   imu_raw_.setZero();
 }
 
