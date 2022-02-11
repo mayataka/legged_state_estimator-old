@@ -20,7 +20,7 @@ public:
   LowPassFilter(const Scalar sampling_time, const Scalar cutoff_freq,
                 const int size=0)
     : estimate_(),
-      alpha_(1.0-std::exp(-sampling_time*2.0*M_PI*cutoff_freq)) {
+      alpha_(0.0) {
     try {
       if (sampling_time <= 0) {
         throw std::out_of_range(
@@ -39,6 +39,8 @@ public:
       std::cerr << e.what() << '\n';
       std::exit(EXIT_FAILURE);
     }
+    const Scalar tau = 1.0 / (2.0*M_PI*cutoff_freq);
+    alpha_ = tau / (tau + sampling_time);
     if (dim == Eigen::Dynamic) {
       estimate_.resize(size);
     }

@@ -76,16 +76,16 @@ public:
     return inekf_.getState().getVelocity();
   }
 
+  const decltype(auto) getBaseAngularVelocityEstimate() const {
+    return imu_gyro_raw_world_;
+  }
+
   const auto getIMUGyroBiasEstimate() const {
     return inekf_.getState().getGyroscopeBias();
   }
 
   const auto getIMULinearAccelerationBiasEstimate() const {
     return inekf_.getState().getAccelerometerBias();
-  }
-
-  const decltype(auto) getBaseAngularVelocityEstimate() const {
-    return lpf_gyro_world_.getEstimate();
   }
 
   const decltype(auto) getJointVelocityEstimate() const {
@@ -117,10 +117,10 @@ private:
   Robot robot_;
   ContactEstimator contact_estimator_;
   LowPassFilter<double, Eigen::Dynamic> lpf_dqJ_, lpf_ddqJ_, lpf_tauJ_;
-  LowPassFilter<double, 3> lpf_gyro_world_, lpf_gyro_accel_world_, lpf_lin_accel_world_;
+  LowPassFilter<double, 3> lpf_gyro_accel_world_, lpf_lin_accel_world_;
   double dt_;
-  Vector3d imu_gyro_raw_world_, imu_lin_accel_raw_world_, 
-           gyro_world_, gyro_world_prev_, gyro_accel_world_, gyro_accel_local_, lin_accel_local_;
+  Vector3d imu_gyro_raw_world_, imu_gyro_raw_world_prev_, imu_gyro_accel_world_, 
+           imu_gyro_accel_local_, imu_lin_accel_raw_world_, imu_lin_accel_local_;
   Vector6d imu_raw_;
   Matrix3d R_;
 };
