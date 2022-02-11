@@ -13,9 +13,9 @@ from scipy.spatial.transform import Rotation
 # tauJ_noise: = 0.1
 class A1Simulator:
     def __init__(self, path_to_urdf, time_step, 
-                 imu_gyro_noise=0.01, imu_lin_accel_noise=0.15,
+                 imu_gyro_noise=0.01, imu_lin_accel_noise=0.1,
                  imu_gyro_bias_noise=0.00001,
-                 imu_lin_accel_bias_noise=0.00001,
+                 imu_lin_accel_bias_noise=0.0001,
                  qJ_noise=0.001, dqJ_noise=0.1, ddqJ_noise=1.0, tauJ_noise=0.1):
         self.path_to_urdf = path_to_urdf
         self.time_step = time_step
@@ -81,7 +81,7 @@ class A1Simulator:
     def get_base_state(self):
         base_pos, base_orn = pybullet.getBasePositionAndOrientation(self.robot)
         base_lin_vel, base_ang_vel = pybullet.getBaseVelocity(self.robot)
-        return np.array(base_pos), np.array(base_orn), np.array(base_lin_vel), np.array(base_ang_vel)
+        return np.array(base_pos).copy(), np.array(base_orn).copy(), np.array(base_lin_vel).copy(), np.array(base_ang_vel).copy()
 
     def get_imu_state(self):
         base_pos, base_orn, base_lin_vel, base_ang_vel = self.get_base_state()
@@ -95,7 +95,7 @@ class A1Simulator:
         self.imu_accel_bias = self.imu_accel_bias + np.random.normal(0, self.imu_lin_accel_bias_noise, 3)
         base_ang_vel = base_ang_vel + base_ang_vel_noise + self.imu_gyro_bias
         base_lin_acc_local = base_lin_acc_local + base_lin_acc_noise + self.imu_accel_bias
-        return base_ang_vel, base_lin_acc_local
+        return base_ang_vel.copy(), base_lin_acc_local.copy()
 
     def get_joint_state(self):
         # joint angles
@@ -152,7 +152,7 @@ class A1Simulator:
         tauJ[10] = pybullet.getJointState(self.robot, 14)[3]
         tauJ[11] = pybullet.getJointState(self.robot, 15)[3]
         ddqJ = (dqJ - self.dqJ_prev) / self.time_step
-        self.dqJ_prev = dqJ
+        self.dqJ_prev = dqJ.copy()
         qJ_noise = np.random.normal(0, self.qJ_noise, 12) 
         dqJ_noise = np.random.normal(0, self.dqJ_noise, 12) 
         ddqJ_noise = np.random.normal(0, self.ddqJ_noise, 12) 

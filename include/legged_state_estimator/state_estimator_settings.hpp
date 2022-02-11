@@ -54,8 +54,8 @@ public:
     settings.inekf_noise_params.setAccelerometerBiasNoise(0.0001);
     settings.inekf_noise_params.setContactNoise(0.1);
 
-    settings.contact_position_noise = 0.1;
-    settings.contact_rotation_noise = 0.1;
+    settings.contact_position_noise = 0.01;
+    settings.contact_rotation_noise = 0.01;
 
     settings.dt = dt;
 
