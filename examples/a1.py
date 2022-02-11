@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
 
 
-PATH_TO_URDF = "a1_description/urdf/a1.urdf"
+PATH_TO_URDF = "a1_description/urdf/a1_friction.urdf"
 TIME_STEP = 0.0025
 sim = a1_simulator.A1Simulator(PATH_TO_URDF, TIME_STEP, 
                                imu_gyro_noise=0.01, imu_lin_accel_noise=0.1,
@@ -42,46 +42,61 @@ base_lin_vel_est = []
 base_ang_vel_est = []
 
 plt.ion()
-fig, axes = plt.subplots(2, 2)
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 ax_pos, ax_quat, ax_lin_vel, ax_ang_vel = axes[0][0], axes[0][1], axes[1][0], axes[1][1],
-ax_pos.set_ylim([-0.5, 0.5])
-ax_quat.set_ylim([-0.5, 1.2])
-ax_lin_vel.set_ylim([-1.5, 1.5])
-ax_ang_vel.set_ylim([-1.5, 1.5])
 PLT_WINDOW_SIZE = 200
 
-line_pos_x_true, = ax_pos.plot([0], [0], linestyle='solid', color='blue', label='x(est)')
-line_pos_y_true, = ax_pos.plot([0], [0], linestyle='solid', color='red', label='y(est)')
-line_pos_z_true, = ax_pos.plot([0], [0], linestyle='solid', color='green', label='z(est)')
-line_pos_x_est,  = ax_pos.plot([0], [0], linestyle='dashed', color='blue', label='x(true)')
-line_pos_y_est,  = ax_pos.plot([0], [0], linestyle='dashed', color='red', label='y(true)')
-line_pos_z_est,  = ax_pos.plot([0], [0], linestyle='dashed', color='green', label='z(true)')
-line_quat_x_true, = ax_quat.plot([0], [0], linestyle='solid', color='blue', label='qx(est)')
-line_quat_y_true, = ax_quat.plot([0], [0], linestyle='solid', color='red', label='qy(est)')
-line_quat_z_true, = ax_quat.plot([0], [0], linestyle='solid', color='green', label='qz(est)')
-line_quat_w_true, = ax_quat.plot([0], [0], linestyle='solid', color='yellow', label='qw(est)')
-line_quat_x_est,  = ax_quat.plot([0], [0], linestyle='dashed', color='blue', label='qx(true)')
-line_quat_y_est,  = ax_quat.plot([0], [0], linestyle='dashed', color='red', label='qy(true)')
-line_quat_z_est,  = ax_quat.plot([0], [0], linestyle='dashed', color='green', label='qz(true)')
-line_quat_w_est,  = ax_quat.plot([0], [0], linestyle='dashed', color='yellow', label='qw(true)')
-line_lin_vel_x_true, = ax_lin_vel.plot([0], [0], linestyle='solid', color='blue', label='vx(est)')
-line_lin_vel_y_true, = ax_lin_vel.plot([0], [0], linestyle='solid', color='red', label='vy(est)')
-line_lin_vel_z_true, = ax_lin_vel.plot([0], [0], linestyle='solid', color='green', label='vz(est)')
-line_lin_vel_x_est,  = ax_lin_vel.plot([0], [0], linestyle='dashed', color='blue', label='vx(true)')
-line_lin_vel_y_est,  = ax_lin_vel.plot([0], [0], linestyle='dashed', color='red', label='vy(true)')
-line_lin_vel_z_est,  = ax_lin_vel.plot([0], [0], linestyle='dashed', color='green', label='vz(true)')
-line_ang_vel_x_true, = ax_ang_vel.plot([0], [0], linestyle='solid', color='blue', label='dqx(est)')
-line_ang_vel_y_true, = ax_ang_vel.plot([0], [0], linestyle='solid', color='red', label='dqy(est)')
-line_ang_vel_z_true, = ax_ang_vel.plot([0], [0], linestyle='solid', color='green', label='dqz(est)')
-line_ang_vel_x_est,  = ax_ang_vel.plot([0], [0], linestyle='dashed', color='blue', label='dqx(true)')
-line_ang_vel_y_est,  = ax_ang_vel.plot([0], [0], linestyle='dashed', color='red', label='dqy(true)')
-line_ang_vel_z_est,  = ax_ang_vel.plot([0], [0], linestyle='dashed', color='green', label='dqz(true)')
+line_pos_x_est, = ax_pos.plot([0], [0], linestyle='solid', color='blue', label=r'$x$'+' (est)')
+line_pos_x_true,  = ax_pos.plot([0], [0], linestyle='dashed', color='blue', label=r'$x$'+' (true)')
+line_pos_y_est, = ax_pos.plot([0], [0], linestyle='solid', color='red', label=r'$y$'+' (est)')
+line_pos_y_true,  = ax_pos.plot([0], [0], linestyle='dashed', color='red', label=r'$y$'+' (true)')
+line_pos_z_est, = ax_pos.plot([0], [0], linestyle='solid', color='green', label=r'$z$'+' (est)')
+line_pos_z_true,  = ax_pos.plot([0], [0], linestyle='dashed', color='green', label=r'$z$'+' (true)')
+
+line_quat_x_est,  = ax_quat.plot([0], [0], linestyle='solid', color='blue', label=r'$q_x$'+' (est)')
+line_quat_x_true, = ax_quat.plot([0], [0], linestyle='dashed', color='blue', label=r'$q_x$'+' (true)')
+line_quat_y_est,  = ax_quat.plot([0], [0], linestyle='solid', color='red', label=r'$q_y$'+' (est)')
+line_quat_y_true, = ax_quat.plot([0], [0], linestyle='dashed', color='red', label=r'$q_y$'+' (true)')
+line_quat_z_est,  = ax_quat.plot([0], [0], linestyle='solid', color='green', label=r'$q_z$'+' (est)')
+line_quat_z_true, = ax_quat.plot([0], [0], linestyle='dashed', color='green', label=r'$q_z$'+' (true)')
+line_quat_w_est,  = ax_quat.plot([0], [0], linestyle='solid', color='yellow', label=r'$q_w$'+' (est)')
+line_quat_w_true, = ax_quat.plot([0], [0], linestyle='dashed', color='yellow', label=r'$q_w$'+' (true)')
+
+line_lin_vel_x_est,  = ax_lin_vel.plot([0], [0], linestyle='solid', color='blue', label=r'$v_x$'+' (est)')
+line_lin_vel_x_true, = ax_lin_vel.plot([0], [0], linestyle='dashed', color='blue', label=r'$v_x$'+' (true)')
+line_lin_vel_y_est,  = ax_lin_vel.plot([0], [0], linestyle='solid', color='red', label=r'$v_y$'+' (est)')
+line_lin_vel_y_true, = ax_lin_vel.plot([0], [0], linestyle='dashed', color='red', label=r'$v_y$'+' (true)')
+line_lin_vel_z_est,  = ax_lin_vel.plot([0], [0], linestyle='solid', color='green', label=r'$v_z$'+' (est)')
+line_lin_vel_z_true, = ax_lin_vel.plot([0], [0], linestyle='dashed', color='green', label=r'$v_z$'+' (true)')
+
+line_ang_vel_x_est,  = ax_ang_vel.plot([0], [0], linestyle='solid', color='blue', label=r'$w_x$'+' (est)')
+line_ang_vel_x_true, = ax_ang_vel.plot([0], [0], linestyle='dashed', color='blue', label=r'$w_x$'+' (true)')
+line_ang_vel_y_est,  = ax_ang_vel.plot([0], [0], linestyle='solid', color='red', label=r'$w_y$'+' (est)')
+line_ang_vel_y_true, = ax_ang_vel.plot([0], [0], linestyle='dashed', color='red', label=r'$w_x$'+' (true)')
+line_ang_vel_z_est,  = ax_ang_vel.plot([0], [0], linestyle='solid', color='green', label=r'$w_z$'+' (est)')
+line_ang_vel_z_true, = ax_ang_vel.plot([0], [0], linestyle='dashed', color='green', label=r'$w_x$'+' (true)')
+
+ax_pos.set_title('Base position [m]')
+ax_quat.set_title('Base orientation (quaternion)')
+ax_lin_vel.set_title('Base linear velocity [m/s]')
+ax_ang_vel.set_title('Base angular velocity [rad/s]')
+
+ax_pos.set_ylim([-0.5, 0.5])
+ax_quat.set_ylim([-0.5, 1.2])
+ax_lin_vel.set_ylim([-2, 2])
+ax_ang_vel.set_ylim([-5, 5])
+
+ax_pos.legend(ncol=3)
+ax_quat.legend(ncol=4)
+ax_lin_vel.legend(ncol=3)
+ax_ang_vel.legend(ncol=3)
 
 
 for i in range(10000):
     sim.step_simulation()
     if i%100 == 0:
-        qJ_cmd = 0.01 * np.random.normal(12) + sim.qJ_ref
+        # qJ_cmd = 0.01 * np.random.normal(12) + sim.qJ_ref
+        qJ_cmd = sim.qJ_ref
         sim.apply_position_command(qJ_cmd)
     # estimate state
     imu_gyro_raw, imu_lin_acc_raw = sim.get_imu_state()
