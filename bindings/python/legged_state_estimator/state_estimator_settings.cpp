@@ -24,6 +24,8 @@ PYBIND11_MODULE(state_estimator_settings, m) {
     .def_readwrite("contact_rotation_noise", &StateEstimatorSettings::contact_rotation_noise)
     .def_readwrite("dt", &StateEstimatorSettings::dt)
     .def_readwrite("lpf_gyro_cutoff", &StateEstimatorSettings::lpf_gyro_cutoff)
+    .def_readwrite("lpf_gyro_accel_cutoff", &StateEstimatorSettings::lpf_gyro_accel_cutoff)
+    .def_readwrite("lpf_lin_accel_cutoff", &StateEstimatorSettings::lpf_lin_accel_cutoff)
     .def_readwrite("lpf_dqJ_cutoff", &StateEstimatorSettings::lpf_dqJ_cutoff)
     .def_readwrite("lpf_ddqJ_cutoff", &StateEstimatorSettings::lpf_ddqJ_cutoff)
     .def_readwrite("lpf_tauJ_cutoff", &StateEstimatorSettings::lpf_dqJ_cutoff);

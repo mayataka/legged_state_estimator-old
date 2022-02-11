@@ -20,8 +20,12 @@ estimator_settings.contact_estimator_settings.beta1 = 0.25
 estimator_settings.inekf_noise_params.contact_cov = 0.01 * np.eye(3, 3)
 estimator_settings.contact_position_noise = 0.1 
 estimator_settings.contact_rotation_noise = 0.1 
-estimator_settings.lpf_gyro_cutoff = 250
-estimator_settings.lpf_gyro_cutoff = 50
+estimator_settings.lpf_gyro_cutoff = 10
+estimator_settings.lpf_gyro_accel_cutoff = 10
+estimator_settings.lpf_lin_accel_cutoff  = 10
+estimator_settings.lpf_dqJ_cutoff  = 10
+estimator_settings.lpf_ddqJ_cutoff = 10
+estimator_settings.lpf_tauJ_cutoff = 10
 estimator = legged_state_estimator.StateEstimator(estimator_settings)
 
 sim.init()
