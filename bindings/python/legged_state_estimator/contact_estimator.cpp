@@ -12,24 +12,31 @@ namespace python {
 namespace py = pybind11;
 
 PYBIND11_MODULE(contact_estimator, m) {
-  py::class_<ContactEstimator<double>>(m, "ContactEstimator")
-    .def(py::init<const Eigen::Vector4d&, const int, const double, const double>(),
-          py::arg("force_sensor_bias"), py::arg("window_filter_size"),
-          py::arg("beta1"), py::arg("beta0"))
+  py::class_<ContactEstimatorSettings>(m, "ContactEstimatorSettings")
     .def(py::init<>())
-    .def("reset", &ContactEstimator<double>::reset)
-    .def("update", &ContactEstimator<double>::update,
-          py::arg("f_raw"))
-    .def("get_contact_force_estimate", &ContactEstimator<double>::getContactForceEstimate)
-    .def("get_contact_probability", 
-          static_cast<const Eigen::Vector4d& (ContactEstimator<double>::*)() const>(&ContactEstimator<double>::getContactProbability))
-    .def("get_contact_probability", 
-          static_cast<double (ContactEstimator<double>::*)(const int) const>(&ContactEstimator<double>::getContactProbability),
-          py::arg("contact_id"))
-    .def("get_non_contact_probability", &ContactEstimator<double>::getNonContactProbability)
-    .def("get_force_bias", &ContactEstimator<double>::setForceBias,
-          py::arg("force-bias"))
-    .def("get_force_bias", &ContactEstimator<double>::getForceBias);
+    .def_readwrite("beta0", &ContactEstimatorSettings::beta0)
+    .def_readwrite("beta1", &ContactEstimatorSettings::beta1)
+    .def_readwrite("force_sensor_bias", &ContactEstimatorSettings::force_sensor_bias)
+    .def_readwrite("schmitt_trigger_settings", &ContactEstimatorSettings::schmitt_trigger_settings);
+
+  py::class_<ContactEstimator>(m, "ContactEstimator")
+    .def(py::init<const Robot&, const ContactEstimatorSettings&>(),
+          py::arg("robot"), py::arg("settings"))
+    .def(py::init<>())
+    .def("reset", &ContactEstimator::reset)
+    .def("update", &ContactEstimator::update,
+          py::arg("robot"), py::arg("tauJ"), py::arg("force_sensor_raw"))
+    .def("get_contact_state", &ContactEstimator::getContactState,
+          py::arg("prob_threshold")=0.5)
+    .def("get_contact_force_estimate", &ContactEstimator::getContactForceEstimate)
+    .def("get_contact_force_normal_estimate", &ContactEstimator::getContactForceNormalEstimate)
+    .def("get_contact_probability", &ContactEstimator::getContactProbability)
+    .def("get_force_sensor_bias", &ContactEstimator::getForceSensorBias)
+    .def("get_contact_surface_normal", &ContactEstimator::getContactSurfaceNormal)
+    .def("set_force_sensor_bias", &ContactEstimator::setForceSensorBias,
+          py::arg("force_sensor_bias"))
+    .def("set_contact_surface_normal", &ContactEstimator::setContactSurfaceNormal,
+          py::arg("contact_surface_normal"));
 }
 
 } // namespace python

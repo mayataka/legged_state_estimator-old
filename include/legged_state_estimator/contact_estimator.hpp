@@ -1,115 +1,77 @@
 #ifndef LEGGED_STATE_ESTIMATOR_CONTACT_ESTIMATOR_HPP_
 #define LEGGED_STATE_ESTIMATOR_CONTACT_ESTIMATOR_HPP_
 
+#include <vector>
+#include <utility>
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
 
+#include "Eigen/Core"
+#include "Eigen/StdVector"
+
 #include "legged_state_estimator/macros.hpp"
-#include "legged_state_estimator/types.hpp"
-#include "legged_state_estimator/moving_window_filter.hpp"
+#include "legged_state_estimator/robot.hpp"
+#include "legged_state_estimator/schmitt_trigger.hpp"
 
 
 namespace legged_state_estimator {
 
-template <typename Scalar>
+struct ContactEstimatorSettings {
+  double beta0;
+  double beta1;
+  std::vector<double> force_sensor_bias;
+  SchmittTriggerSettings schmitt_trigger_settings;
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+
 class ContactEstimator {
 public:
-  using Vector4 = types::Vector4<Scalar>;
+  ContactEstimator(const Robot& robot, 
+                   const ContactEstimatorSettings& settings);
 
-  ContactEstimator(const Vector4& force_sensor_bias, 
-                   const int window_filter_size, 
-                   const Scalar beta1, const Scalar beta0)
-   : f_bias_(force_sensor_bias),
-     f_est_(Vector4::Zero()),
-     contact_probability_(Vector4::Zero()),
-     beta1_(beta1),
-     beta0_(beta0),
-     non_contact_probability_(0.0),
-     win_filter_(window_filter_size) {
-    contact_probability_.fill(1.0);
-    try {
-      if (window_filter_size <= 0) {
-        throw std::out_of_range(
-            "Invalid argment: window_filter_size must be positive!");
-      }
-    }
-    catch(const std::exception& e) {
-      std::cerr << e.what() << '\n';
-      std::exit(EXIT_FAILURE);
-    }
-  }
+  ContactEstimator();
 
-  ContactEstimator() 
-   : f_bias_(),
-     f_est_(),
-     contact_probability_(),
-     beta1_(0),
-     beta0_(0),
-     win_filter_() {
-  }
-
-  ~ContactEstimator() {
-  }
+  ~ContactEstimator();
 
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_COPY_CONSTRUCTOR(ContactEstimator);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_COPY_ASSIGN_OPERATOR(ContactEstimator);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_CONSTRUCTOR(ContactEstimator);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_ASSIGN_OPERATOR(ContactEstimator);
 
-  void reset() {
-    contact_probability_.fill(0.0);
-    non_contact_probability_ = 1.0;
-  }
+  void reset();
 
-  void update(const Vector4& f_raw) {
-    f_est_ = f_raw - f_bias_;
-    win_filter_.update(f_est_);
-    for (int i=0; i<4; ++i) {
-      contact_probability_.coeffRef(i) 
-          = 1.0 / (1.0 + std::exp(- beta1_*win_filter_.getEstimate().coeff(i) - beta0_));
-      if (std::isnan(contact_probability_.coeffRef(i)) 
-            || std::isinf(contact_probability_.coeffRef(i))) {
-        contact_probability_.coeffRef(i) = 0;
-      }
-    }
-    non_contact_probability_ = 1.0;
-    for (int i=0; i<4; ++i) {
-      non_contact_probability_ *= (1.0-contact_probability_.coeff(i));
-    }
-  }
+  void update(Robot& robot, const Eigen::VectorXd& tauJ, 
+              const std::vector<double>& force_sensor_raw);
 
-  const Vector4& getContactForceEstimate() const {
-    return f_est_;
-  }
+  void setParameters(const ContactEstimatorSettings& settings);
 
-  const Vector4& getContactProbability() const {
-    return contact_probability_;
-  }
+  std::vector<std::pair<int, bool>> getContactState(const double prob_threshold=0.5) const;
 
-  Scalar getContactProbability(const int contact_id) const {
-    return contact_probability_.coeff(contact_id);
-  }
+  const std::vector<Eigen::Vector3d>& getContactForceEstimate() const;
 
-  Scalar getNonContactProbability() const {
-    return non_contact_probability_;
-  }
+  const std::vector<double>& getContactForceNormalEstimate() const;
 
-  void setForceBias(const Vector4& force_sensor_bias) {
-    f_bias_ = force_sensor_bias;
-  }
+  const std::vector<double>& getContactProbability() const;
 
-  const Vector4& getForceBias() const {
-    return f_bias_;
-  }
+  const std::vector<double>& getForceSensorBias() const;
+
+  const std::vector<Eigen::Vector3d>& getContactSurfaceNormal() const;
+
+  void setForceSensorBias(const std::vector<double>& force_sensor_bias);
+
+  void setContactSurfaceNormal(const std::vector<Eigen::Vector3d>& contact_surface_normal);
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private:
-  Vector4 f_bias_, f_est_, contact_probability_;
-  Scalar beta1_, beta0_, non_contact_probability_;
-  int num_calib_sums_;
-  MovingWindowFilter<Scalar, 4> win_filter_;
+  ContactEstimatorSettings settings_;
+  std::vector<Eigen::Vector3d> contact_force_estimate_, contact_surface_normal_;
+  std::vector<double> contact_force_normal_estimate_, contact_probability_;
+  std::vector<SchmittTrigger> schmitt_trigger_;
+  int num_contacts_;
 };
 
 } // namespace legged_state_estimator

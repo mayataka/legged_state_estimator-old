@@ -1,101 +1,129 @@
 #include "legged_state_estimator/state_estimator.hpp"
-#include "legged_state_estimator/types.hpp"
 
 
 namespace legged_state_estimator {
 
-using Vector19d = types::Vector19<double>;
-using Vector18d = types::Vector18<double>;
-using Vector12d = types::Vector12<double>;
-using Vector4d = types::Vector4<double>;
-using Vector3d = types::Vector3<double>;
-using Quaterniond = types::Quaternion<double>;
+StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
+  : inekf_(settings.inekf_noise_params),
+    inekf_state_(),
+    inekf_leg_kinematics_(),
+    robot_(settings.path_to_urdf, settings.contact_frames),
+    contact_estimator_(robot_, settings.contact_estimator_settings),
+    lpf_gyro_accel_world_(settings.dt, settings.lpf_gyro_accel_cutoff),
+    lpf_lin_accel_world_(settings.dt, settings.lpf_lin_accel_cutoff),
+    lpf_dqJ_(settings.dt, settings.lpf_dqJ_cutoff, robot_.nJ()),
+    lpf_ddqJ_(settings.dt, settings.lpf_ddqJ_cutoff, robot_.nJ()),
+    lpf_tauJ_(settings.dt, settings.lpf_tauJ_cutoff, robot_.nJ()),
+    dt_(settings.dt),
+    imu_gyro_raw_world_(Vector3d::Zero()), 
+    imu_gyro_raw_world_prev_(Vector3d::Zero()), 
+    imu_gyro_accel_world_(Vector3d::Zero()), 
+    imu_gyro_accel_local_(Vector3d::Zero()), 
+    imu_lin_accel_raw_world_(Vector3d::Zero()), 
+    imu_lin_accel_local_(Vector3d::Zero()),
+    imu_raw_(Vector6d::Zero()),
+    R_(Matrix3d::Identity()) {
+  Matrix6d cov_leg = Matrix6d::Zero();
+  const double contact_position_cov = settings.contact_position_noise * settings.contact_position_noise; 
+  const double contact_rotation_cov = settings.contact_rotation_noise * settings.contact_rotation_noise; 
+  cov_leg.topLeftCorner<3, 3>() = contact_position_cov * Eigen::Matrix3d::Identity();
+  cov_leg.bottomRightCorner<3, 3>() = contact_rotation_cov * Eigen::Matrix3d::Identity();
+  for (int i=0; i<settings.contact_frames.size(); ++i) {
+    inekf_leg_kinematics_.emplace_back(i, Eigen::Matrix4d::Identity(), cov_leg);
+  }
+  imu_raw_.setZero();
+}
 
-using Vector19f = types::Vector19<float>;
-using Vector18f = types::Vector18<float>;
-using Vector12f = types::Vector12<float>;
-using Vector4f = types::Vector4<float>;
-using Vector3f = types::Vector3<float>;
-using Quaternionf = types::Quaternion<float>;
 
-template StateEstimator<double>::StateEstimator(const StateEstimatorSettings<double>&);
-template StateEstimator<float>::StateEstimator(const StateEstimatorSettings<float>&);
+StateEstimator::StateEstimator() 
+  : inekf_(),
+    inekf_state_(),
+    inekf_leg_kinematics_(),
+    robot_(),
+    contact_estimator_(),
+    lpf_gyro_accel_world_(),
+    lpf_lin_accel_world_(),
+    lpf_dqJ_(),
+    lpf_ddqJ_(),
+    lpf_tauJ_(),
+    dt_(0),
+    imu_gyro_raw_world_(Vector3d::Zero()), 
+    imu_gyro_raw_world_prev_(Vector3d::Zero()), 
+    imu_gyro_accel_world_(Vector3d::Zero()), 
+    imu_gyro_accel_local_(Vector3d::Zero()), 
+    imu_lin_accel_raw_world_(Vector3d::Zero()), 
+    imu_lin_accel_local_(Vector3d::Zero()),
+    imu_raw_(Vector6d::Zero()),
+    R_(Matrix3d::Identity()) {
+}
 
-template StateEstimator<double>::StateEstimator();
-template StateEstimator<float>::StateEstimator();
 
-template StateEstimator<double>::~StateEstimator();
-template StateEstimator<float>::~StateEstimator();
+StateEstimator::~StateEstimator() {}
 
-template void StateEstimator<double>::resetCalibration();
-template void StateEstimator<float>::resetCalibration();
 
-template void StateEstimator<double>::addCalibrationData(const Vector3d&, const Vector3d&);
-template void StateEstimator<float>::addCalibrationData(const Vector3f&, const Vector3f&);
+void StateEstimator::init(const Eigen::Vector3d& base_pos,
+                          const Eigen::Vector4d& base_quat,
+                          const Eigen::Vector3d& base_lin_vel,
+                          const Eigen::Vector3d& imu_gyro_bias,
+                          const Eigen::Vector3d& imu_lin_accel_bias) {
+  inekf_state_.setPosition(base_pos);
+  inekf_state_.setRotation(Eigen::Quaterniond(base_quat).toRotationMatrix());
+  inekf_state_.setVelocity(base_lin_vel);
+  inekf_state_.setGyroscopeBias(imu_gyro_bias);
+  inekf_state_.setAccelerometerBias(imu_lin_accel_bias);
+  inekf_.setState(inekf_state_);
+}
 
-template void StateEstimator<double>::doCalibration(const Quaterniond&);
-template void StateEstimator<float>::doCalibration(const Quaternionf&);
 
-template void StateEstimator<double>::update(const Quaterniond&, const Vector3d&, const Vector3d&, 
-                                             const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::update(const Quaternionf&, const Vector3f&, const Vector3f&, 
-                                            const Vector12f&, const Vector12f&, const Vector4f&);
+void StateEstimator::update(const Eigen::Vector3d& imu_gyro_raw, 
+                            const Eigen::Vector3d& imu_lin_accel_raw, 
+                            const Eigen::VectorXd& qJ, 
+                            const Eigen::VectorXd& dqJ, 
+                            const Eigen::VectorXd& ddqJ, 
+                            const Eigen::VectorXd& tauJ, 
+                            const std::vector<double>& f_raw) {
+  // Process IMU measurements in InEKF
+  imu_raw_.template head<3>() = imu_gyro_raw;
+  imu_raw_.template tail<3>() = imu_lin_accel_raw;
+  inekf_.Propagate(imu_raw_, dt_);
+  // Process IMU measurements in LPFs
+  imu_gyro_raw_world_.noalias() = getBaseRotationEstimate() * (imu_gyro_raw - getIMUGyroBiasEstimate());
+  imu_gyro_accel_world_.noalias() = (imu_gyro_raw_world_ - imu_gyro_raw_world_prev_) / dt_;
+  imu_gyro_raw_world_prev_ = imu_gyro_raw_world_;
+  imu_lin_accel_raw_world_.noalias() = getBaseRotationEstimate() * (imu_lin_accel_raw - getIMULinearAccelerationBiasEstimate());
+  lpf_gyro_accel_world_.update(imu_lin_accel_raw_world_);
+  lpf_lin_accel_world_.update(imu_lin_accel_raw_world_);
+  imu_lin_accel_local_.noalias()
+      = getBaseRotationEstimate().transpose() * lpf_lin_accel_world_.getEstimate();
+  imu_gyro_accel_local_.noalias() 
+      = getBaseRotationEstimate().transpose() * lpf_gyro_accel_world_.getEstimate();
+  lpf_dqJ_.update(dqJ);
+  lpf_ddqJ_.update(ddqJ);
+  lpf_tauJ_.update(tauJ);
+  // Update contact info
+  robot_.updateLegKinematics(qJ, dqJ);
+  robot_.updateDynamics(getBasePositionEstimate(), getBaseQuaternionEstimate(), 
+                        getBaseLinearVelocityEstimate(), imu_gyro_raw_world_,
+                        imu_lin_accel_local_, imu_gyro_accel_local_, qJ, dqJ, ddqJ);
+  contact_estimator_.update(robot_, lpf_tauJ_.getEstimate(), f_raw);
+  inekf_.setContacts(contact_estimator_.getContactState());
+  for (int i=0; i<robot_.numContacts(); ++i) {
+    inekf_leg_kinematics_[i].setContactPosition(
+        robot_.getContactPosition(i)-robot_.getBasePosition());
+  }
+  // Process kinematics measurements in InEKF
+  inekf_.CorrectKinematics(inekf_leg_kinematics_);
+}
 
-template void StateEstimator<double>::predict_mpc(const Quaterniond&, const Vector3d&, const Vector3d&, const Vector3d&, const Vector3d&,
-                                                  const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::predict_mpc(const Quaternionf&, const Vector3f&, const Vector3f&, const Vector3f&, const Vector3f&,
-                                                 const Vector12f&, const Vector12f&, const Vector4f&);
 
-template void StateEstimator<double>::predict(const Quaterniond&, const Vector3d&, const Vector3d&, const Vector3d&, 
-                                              const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::predict(const Quaternionf&, const Vector3f&, const Vector3f&, const Vector3f&,
-                                             const Vector12f&, const Vector12f&, const Vector4f&);
-
-template void StateEstimator<double>::predict(const Quaterniond&, const Vector3d&, const Vector3d&, 
-                                              const Vector12d&, const Vector12d&, const Vector4d&);
-template void StateEstimator<float>::predict(const Quaternionf&, const Vector3f&, const Vector3f&, 
-                                             const Vector12f&, const Vector12f&, const Vector4f&);
-
-template void StateEstimator<double>::reset(const double, const double, const Vector4d&);
-template void StateEstimator<float>::reset(const float, const float, const Vector4f&);
-
-template const Vector3d& StateEstimator<double>::getBaseLinearVelocityEstimate() const;
-template const Vector3f& StateEstimator<float>::getBaseLinearVelocityEstimate() const;
-
-template const Vector3d& StateEstimator<double>::getBaseAngularVelocityEstimate() const;
-template const Vector3f& StateEstimator<float>::getBaseAngularVelocityEstimate() const;
-
-template const Vector3d& StateEstimator<double>::getBasePositionEstimate() const;
-template const Vector3f& StateEstimator<float>::getBasePositionEstimate() const;
-
-template const Vector12d& StateEstimator<double>::getJointVelocityEstimate() const;
-template const Vector12f& StateEstimator<float>::getJointVelocityEstimate() const;
-
-template const Vector4d& StateEstimator<double>::getContactForceEstimate() const;
-template const Vector4f& StateEstimator<float>::getContactForceEstimate() const;
-
-template double StateEstimator<double>::getContactProbability(const int) const;
-template float StateEstimator<float>::getContactProbability(const int) const;
-
-template const Vector4d& StateEstimator<double>::getContactProbability() const;
-template const Vector4f& StateEstimator<float>::getContactProbability() const;
-
-template double StateEstimator<double>::getNonContactProbability() const;
-template float StateEstimator<float>::getNonContactProbability() const;
-
-template const std::array<Vector3d, 4>& StateEstimator<double>::getContactFramePositionEstimate() const;
-template const std::array<Vector3f, 4>& StateEstimator<float>::getContactFramePositionEstimate() const;
-
-template const Vector3d& StateEstimator<double>::getContactFramePositionEstimate(const int) const;
-template const Vector3f& StateEstimator<float>::getContactFramePositionEstimate(const int) const;
-
-template const std::array<Vector3d, 4>& StateEstimator<double>::getContactFrameVelocityEstimate() const;
-template const std::array<Vector3f, 4>& StateEstimator<float>::getContactFrameVelocityEstimate() const;
-
-template const Vector3d& StateEstimator<double>::getContactFrameVelocityEstimate(const int) const;
-template const Vector3f& StateEstimator<float>::getContactFrameVelocityEstimate(const int) const;
-
-template class StateEstimator<double>;
-template class StateEstimator<float>;
+void StateEstimator::predict(const Eigen::Vector3d& imu_gyro_raw, 
+                             const Eigen::Vector3d& imu_lin_accel_raw, 
+                             const Eigen::VectorXd& qJ, 
+                             const Eigen::VectorXd& dqJ, 
+                             const Eigen::VectorXd& ddqJ, 
+                             const Eigen::VectorXd& tauJ, 
+                             const std::vector<double>& f_raw,
+                             const Eigen::Vector3d& lin_vel_pred) {
+}
 
 } // namespace legged_state_estimator

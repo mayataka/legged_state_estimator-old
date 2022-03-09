@@ -22,6 +22,8 @@ set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 find_package(Eigen3 REQUIRED)
 # find pinocchio
 find_package(pinocchio REQUIRED)
+# find inekf
+find_package(inekf REQUIRED)
 # build 
 file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES src/*.cpp)
 file(GLOB_RECURSE ${PROJECT_NAME}_HEADERS include/${PROJECT_NAME}/*.h*)
@@ -35,12 +37,14 @@ target_link_libraries(
   ${PROJECT_NAME} 
   PUBLIC
   ${PINOCCHIO_LIBRARIES}
+  inekf::inekf
 )
 target_include_directories(
   ${PROJECT_NAME} 
   PUBLIC
   ${EIGEN3_INCLUDE_DIR}
   ${PINOCCHIO_INCLUDE_DIRS}
+  ${inekf_INCLUDE_DIRS}
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
