@@ -21,6 +21,8 @@ PYBIND11_MODULE(robot, m) {
   py::class_<Robot>(m, "Robot")
     .def(py::init<const std::string&, const std::vector<int>&>(),
           py::arg("path_to_urdf"), py::arg("contact_frames"))
+    .def(py::init<const std::string&, const std::vector<std::string>&>(),
+          py::arg("path_to_urdf"), py::arg("contact_frames"))
     .def(py::init<>())
     .def("update_leg_kinematics", &Robot::updateLegKinematics,
           py::arg("qJ"), py::arg("dqJ"), 

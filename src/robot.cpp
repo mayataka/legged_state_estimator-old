@@ -26,6 +26,43 @@ Robot::Robot(const std::string& path_to_urdf,
 }
 
 
+Robot::Robot(const std::string& path_to_urdf, 
+             const std::vector<std::string>& contact_frames) 
+  : contact_frames_(),
+    model_(),
+    data_(),
+    q_(),
+    v_(),
+    a_(),
+    tau_(),
+    jac_6d_() {
+  pinocchio::urdf::buildModel(path_to_urdf, 
+                              pinocchio::JointModelFreeFlyer(), model_);
+  data_ = pinocchio::Data(model_);
+  q_   = Eigen::VectorXd(model_.nq);
+  v_   = Eigen::VectorXd(model_.nv);
+  a_   = Eigen::VectorXd(model_.nv);
+  tau_ = Eigen::VectorXd(model_.nv);
+  for (int i=0; i<contact_frames.size(); ++i) {
+    jac_6d_.push_back(Eigen::MatrixXd::Zero(6, model_.nv));
+  }
+  contact_frames_.clear();
+  for (const auto& e : contact_frames) {
+    try {
+      if (!model_.existFrame(e)) {
+        throw std::invalid_argument(
+            "Invalid argument: frame " + e + " does not exit!");
+      }
+    }
+    catch(const std::exception& e) {
+      std::cerr << e.what() << '\n';
+      std::exit(EXIT_FAILURE);
+    }
+    contact_frames_.push_back(model_.getFrameId(e));
+  }
+}
+
+
 Robot::Robot() 
   : contact_frames_(),
     model_(),

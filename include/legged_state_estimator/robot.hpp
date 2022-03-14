@@ -21,12 +21,39 @@
 
 namespace legged_state_estimator {
 
+///
+/// @class Robot
+/// @brief Dynamics and kinematics model of robots. Wraps pinocchio::Model and 
+/// pinocchio::Data. Includes contacts.
+///
 class Robot {
 public:
+  ///
+  /// @brief Constructs a robot model. Builds the Pinocchio robot model and data 
+  /// from URDF. Assumes that the robot never has any contacts.
+  /// @param[in] path_to_urdf Path to the URDF file.
+  /// @param[in] contact_frames Collection of the id of frames that can have 
+  /// contacts with the environments. 
+  ///
   Robot(const std::string& path_to_urdf, const std::vector<int>& contact_frames);
 
+  ///
+  /// @brief Constructs a robot model. Builds the Pinocchio robot model and data 
+  /// from URDF. Assumes that the robot never has any contacts.
+  /// @param[in] path_to_urdf Path to the URDF file.
+  /// @param[in] contact_frames Collection of the names of frames that can have 
+  /// contacts with the environments. 
+  ///
+  Robot(const std::string& path_to_urdf, const std::vector<std::string>& contact_frames);
+
+  ///
+  /// @brief Default constructor. 
+  ///
   Robot();
 
+  ///
+  /// @brief Destructor. 
+  ///
   ~Robot();
 
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_COPY_CONSTRUCTOR(Robot);
@@ -34,9 +61,29 @@ public:
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_CONSTRUCTOR(Robot);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_ASSIGN_OPERATOR(Robot);
 
+  ///
+  /// @brief Updates leg kinemarics.
+  /// @param[in] qJ Joint positions. Size must be Robot::nJ().
+  /// @param[in] dqJ Joint velocities. Size must be Robot::nJ().
+  /// @param[in] rf Reference frame of the kinematics. Default is 
+  /// pinocchio::LOCAL_WORLD_ALIGNED.
+  ///
   void updateLegKinematics(const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ,
                            const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED);
 
+  ///
+  /// @brief Updates kinemarics.
+  /// @param[in] base_pos Base position. 
+  /// @param[in] base_quat Base orientation expressed by quaternion (x, y, z, w). 
+  /// @param[in] base_linear_vel Base linear velocity expressed in the body 
+  /// local coordinate. 
+  /// @param[in] base_angular_vel Base angular velocity expressed in the body 
+  /// local coordinate. 
+  /// @param[in] qJ Joint positions. Size must be Robot::nJ().
+  /// @param[in] dqJ Joint velocities. Size must be Robot::nJ().
+  /// @param[in] rf Reference frame of the kinematics. Default is 
+  /// pinocchio::LOCAL_WORLD_ALIGNED.
+  ///
   void updateKinematics(const Eigen::Vector3d& base_pos, 
                         const Eigen::Vector4d& base_quat, 
                         const Eigen::Vector3d& base_linear_vel, 
@@ -44,9 +91,31 @@ public:
                         const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ,
                         const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED);
 
+  ///
+  /// @brief Updates leg dynamics.
+  /// @param[in] qJ Joint positions. Size must be Robot::nJ().
+  /// @param[in] dqJ Joint velocities. Size must be Robot::nJ().
+  /// @param[in] ddqJ Joint accelerations. Size must be Robot::nJ().
+  ///
   void updateLegDynamics(const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ, 
                          const Eigen::VectorXd& ddqJ);
 
+  ///
+  /// @brief Updates dynamics.
+  /// @param[in] base_pos Base position. 
+  /// @param[in] base_quat Base orientation expressed by quaternion (x, y, z, w). 
+  /// @param[in] base_linear_vel Base linear velocity expressed in the body 
+  /// local coordinate. 
+  /// @param[in] base_angular_vel Base angular velocity expressed in the body 
+  /// local coordinate. 
+  /// @param[in] base_linear_vel Base linear acceleration expressed in the body 
+  /// local coordinate. 
+  /// @param[in] base_angular_vel Base angular acceleration expressed in the body 
+  /// local coordinate. 
+  /// @param[in] qJ Joint positions. Size must be Robot::nJ().
+  /// @param[in] dqJ Joint velocities. Size must be Robot::nJ().
+  /// @param[in] ddqJ Joint accelerations. Size must be Robot::nJ().
+  ///
   void updateDynamics(const Eigen::Vector3d& base_pos, 
                       const Eigen::Vector4d& base_quat, 
                       const Eigen::Vector3d& base_linear_vel, 
@@ -56,30 +125,75 @@ public:
                       const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ,
                       const Eigen::VectorXd& ddqJ);
 
+  ///
+  /// @return const reference to the base position.
+  ///
   const Eigen::Vector3d& getBasePosition() const;
 
+  ///
+  /// @return const reference to the base orientation expressed by a rotation 
+  /// matrix.
+  ///
   const Eigen::Matrix3d& getBaseRotation() const;
 
+  ///
+  /// @return const reference to the contact position. 
+  ///
   const Eigen::Vector3d& getContactPosition(const int contact_id) const;
 
+  ///
+  /// @return const reference to the contact orientation expressed by a rotation
+  /// matrix. 
+  ///
   const Eigen::Matrix3d& getContactRotation(const int contact_id) const;
 
+  ///
+  /// @return const reference to the contact Jacobian with respect to the 
+  /// generalized coordinate (base pos + base orn + joint positions). 
+  /// Size is 3 x Robot::nv().
+  ///
   const Eigen::Block<const Eigen::MatrixXd> getContactJacobian(const int contact_id) const;
 
+  ///
+  /// @return const reference to the contact Jacobian with respect to the 
+  /// joint positions. Size is 3 x Robot::nJ().
+  ///
   const Eigen::Block<const Eigen::MatrixXd> getJointContactJacobian(const int contact_id) const;
 
+  ///
+  /// @return const reference to the inverse dynamics. Size is Robot::nv().
+  ///
   const Eigen::VectorXd& getInverseDynamics() const;
 
+  ///
+  /// @return const reference to the inverse dynamics at the joint. Size is 
+  /// Robot::nJ().
+  /// 
   const Eigen::VectorBlock<const Eigen::VectorXd> getJointInverseDynamics() const;
 
+  ///
+  /// @return const reference to the contact frames.
+  ///
   const std::vector<int>& getContactFrames() const;
 
+  ///
+  /// @return Dimension of the configuration.
+  ///
   int nq() const;
 
+  ///
+  /// @return Dimension of the generalized velocity.
+  ///
   int nv() const;
 
+  ///
+  /// @return Number of the joints.
+  ///
   int nJ() const;
 
+  ///
+  /// @return Number of the contacts.
+  ///
   int numContacts() const;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

@@ -35,7 +35,7 @@ class A1Simulator:
         self.camera_pitch = 0.0
         self.camera_target_pos = [0., 0., 0.]
         self.robot = None
-        self.base_lin_vel_prev = np.zeros(3)
+        self.base_lin_vel_world_prev = np.zeros(3)
         self.q = np.array([0, 0, 0.3181, 0, 0, 0, 1, 
                            0.0,  0.67, -1.3, 
                            0.0,  0.67, -1.3, 
@@ -78,24 +78,34 @@ class A1Simulator:
         pybullet.stepSimulation()
         time.sleep(self.time_step)
 
-    def get_base_state(self):
+    def get_base_state(self, coordinate='local'):
         base_pos, base_orn = pybullet.getBasePositionAndOrientation(self.robot)
-        base_lin_vel, base_ang_vel = pybullet.getBaseVelocity(self.robot)
+        if coordinate == 'local':
+            base_lin_vel_world, base_ang_vel_world = pybullet.getBaseVelocity(self.robot)
+            R = np.reshape(pybullet.getMatrixFromQuaternion(base_orn), [3, 3]) 
+            base_lin_vel = R.T @ np.array(base_lin_vel_world)
+            base_ang_vel = R.T @ np.array(base_ang_vel_world)
+        elif coordinate == 'world':
+            base_lin_vel, base_ang_vel = pybullet.getBaseVelocity(self.robot)
+        else:
+            print('coordinate must be \'local\' or \'world\'!')
+            return NotImplementedError()
         return np.array(base_pos).copy(), np.array(base_orn).copy(), np.array(base_lin_vel).copy(), np.array(base_ang_vel).copy()
 
     def get_imu_state(self):
-        base_pos, base_orn, base_lin_vel, base_ang_vel = self.get_base_state()
-        base_lin_acc_world = (base_lin_vel - self.base_lin_vel_prev) / self.time_step + np.array([0, 0, 9.81])
+        base_pos, base_orn, base_lin_vel_world, base_ang_vel_world = self.get_base_state('world')
+        base_lin_acc_world = (base_lin_vel_world - self.base_lin_vel_world_prev) / self.time_step + np.array([0, 0, 9.81])
         R = Rotation.from_quat(base_orn).as_matrix()
         base_lin_acc_local = R.T @ base_lin_acc_world
-        self.base_lin_vel_prev = base_lin_vel.copy()
+        self.base_lin_vel_world_prev = base_lin_vel_world.copy()
+        _, _, _, base_ang_vel_local = self.get_base_state('local')
         base_ang_vel_noise = np.random.normal(0, self.imu_gyro_noise, 3) 
         base_lin_acc_noise = np.random.normal(0, self.imu_lin_accel_noise, 3) 
         self.imu_gyro_bias = self.imu_gyro_bias + np.random.normal(0, self.imu_gyro_bias_noise, 3)
         self.imu_accel_bias = self.imu_accel_bias + np.random.normal(0, self.imu_lin_accel_bias_noise, 3)
-        base_ang_vel = base_ang_vel + base_ang_vel_noise + self.imu_gyro_bias
+        base_ang_vel_local = base_ang_vel_local + base_ang_vel_noise + self.imu_gyro_bias
         base_lin_acc_local = base_lin_acc_local + base_lin_acc_noise + self.imu_accel_bias
-        return base_ang_vel.copy(), base_lin_acc_local.copy()
+        return base_ang_vel_local.copy(), base_lin_acc_local.copy()
 
     def get_joint_state(self):
         # joint angles
