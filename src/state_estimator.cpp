@@ -103,7 +103,7 @@ void StateEstimator::update(const Eigen::Vector3d& imu_gyro_raw,
   // Update contact info
   robot_.updateLegKinematics(qJ, dqJ);
   robot_.updateDynamics(getBasePositionEstimate(), getBaseQuaternionEstimate(), 
-                        getBaseLinearVelocityEstimate(), imu_gyro_raw_world_,
+                        getBaseLinearVelocityEstimateLocal(), imu_gyro_raw,
                         imu_lin_accel_local_, imu_gyro_accel_local_, qJ, dqJ, ddqJ);
   contact_estimator_.update(robot_, lpf_tauJ_.getEstimate(), f_raw);
   inekf_.setContacts(contact_estimator_.getContactState());

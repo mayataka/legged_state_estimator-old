@@ -41,12 +41,34 @@ public:
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_CONSTRUCTOR(StateEstimator);
   LEGGED_STATE_ESTIMATOR_USE_DEFAULT_MOVE_ASSIGN_OPERATOR(StateEstimator);
 
-  void init(const Eigen::Vector3d& base_pos,
-            const Eigen::Vector4d& base_quat,
-            const Eigen::Vector3d& base_lin_vel,
-            const Eigen::Vector3d& imu_gyro_bias,
-            const Eigen::Vector3d& imu_lin_accel_bias);
+  ///
+  /// @brief Initializes the state estimator.
+  /// @param[in] base_pos Base position. 
+  /// @param[in] base_quat Base orientation expressed by quaternion (x, y, z, w). 
+  /// @param[in] base_lin_vel_world Base linear velocity expressed in the world
+  /// coordinate. Default is Eigen::Vector3d::Zero().
+  /// @param[in] imu_gyro_bias Initial guess of the IMU gyro bias. Default is 
+  /// Eigen::Vector3d::Zero().
+  /// @param[in] imu_lin_accel_bias Initial guess of the IMU linear acceleration 
+  /// bias. Default is Eigen::Vector3d::Zero().
+  ///
+  void init(const Eigen::Vector3d& base_pos, const Eigen::Vector4d& base_quat,
+            const Eigen::Vector3d& base_lin_vel_world=Eigen::Vector3d::Zero(),
+            const Eigen::Vector3d& imu_gyro_bias=Eigen::Vector3d::Zero(),
+            const Eigen::Vector3d& imu_lin_accel_bias=Eigen::Vector3d::Zero());
 
+  ///
+  /// @brief Updates the state estimation.
+  /// @param[in] imu_gyro_raw Raw measurement of the base angular velocity 
+  /// expressed in the body local coordinate from IMU gyro sensor.
+  /// @param[in] imu_lin_accel_raw Raw measurement of the base linear 
+  /// acceleration expressed in the body local coordinate from IMU accelerometer. 
+  /// @param[in] qJ Raw measurement of the joint positions. 
+  /// @param[in] dqJ Raw measurement of the joint velocities. 
+  /// @param[in] ddqJ Raw measurement of the joint accelerations. 
+  /// @param[in] tauJ Raw measurement of the joint torques. 
+  /// @param[in] f_raw Raw measurement of the foot force sensor. 
+  ///
   void update(const Eigen::Vector3d& imu_gyro_raw, 
               const Eigen::Vector3d& imu_lin_accel_raw, 
               const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ, 
@@ -60,51 +82,107 @@ public:
                const std::vector<double>& f_raw,
                const Eigen::Vector3d& lin_vel_pred);
 
-  const auto getBasePositionEstimate() const {
+  ///
+  /// @return const reference to the base position estimate.
+  ///
+  const Eigen::Block<const Eigen::MatrixXd, 3, 1> getBasePositionEstimate() const {
     return inekf_.getState().getPosition();
   }
 
-  const auto getBaseRotationEstimate() const {
+  ///
+  /// @return const reference to the base orientation estimate expressed by a 
+  /// rotation matrix.
+  ///
+  const Eigen::Block<const Eigen::MatrixXd, 3, 3> getBaseRotationEstimate() const {
     return inekf_.getState().getRotation();
   }
 
-  const auto getBaseQuaternionEstimate() const {
-    return Eigen::Quaterniond(inekf_.getState().getRotation()).coeffs();
+  ///
+  /// @return const reference to the base orientation estimate expressed by 
+  /// quaternion.
+  ///
+  Eigen::Vector4d getBaseQuaternionEstimate() const {
+    return Eigen::Quaterniond(getBaseRotationEstimate()).coeffs();
   }
 
-  const auto getBaseLinearVelocityEstimate() const {
+  ///
+  /// @return const reference to the base linear velocity estimate expressed in 
+  /// the world frame.
+  ///
+  const Eigen::Block<const Eigen::MatrixXd, 3, 1> getBaseLinearVelocityEstimateWorld() const {
     return inekf_.getState().getVelocity();
   }
 
-  const decltype(auto) getBaseAngularVelocityEstimate() const {
+  ///
+  /// @return const reference to the base linear velocity estimate expressed in 
+  /// the body local coordinate.
+  ///
+  const Eigen::Vector3d getBaseLinearVelocityEstimateLocal() const {
+    return getBaseRotationEstimate().transpose() * getBaseLinearVelocityEstimateWorld();
+  }
+
+  ///
+  /// @return const reference to the base angular velocity estimate expressed in 
+  /// the world frame.
+  ///
+  const Eigen::Vector3d& getBaseAngularVelocityEstimateWorld() const {
     return imu_gyro_raw_world_;
   }
 
-  const auto getIMUGyroBiasEstimate() const {
+  ///
+  /// @return const reference to the base angular velocity estimate expressed in 
+  /// the local frame.
+  ///
+  const Eigen::VectorBlock<const Vector6d, 3> getBaseAngularVelocityEstimateLocal() const {
+    return imu_raw_.template head<3>();
+  }
+
+  ///
+  /// @return const reference to the IMU gyro bias estimate. 
+  ///
+  const Eigen::VectorBlock<const Eigen::VectorXd, 3> getIMUGyroBiasEstimate() const {
     return inekf_.getState().getGyroscopeBias();
   }
 
-  const auto getIMULinearAccelerationBiasEstimate() const {
+  ///
+  /// @return const reference to the IMU linear acceleration bias estimate. 
+  ///
+  const Eigen::VectorBlock<const Eigen::VectorXd, 3> getIMULinearAccelerationBiasEstimate() const {
     return inekf_.getState().getAccelerometerBias();
   }
 
-  const decltype(auto) getJointVelocityEstimate() const {
+  ///
+  /// @return const reference to the joint velocity estimates. 
+  ///
+  const Eigen::VectorXd& getJointVelocityEstimate() const {
     return lpf_dqJ_.getEstimate();
   }
 
-  const decltype(auto) getJointAccelerationEstimate() const {
+  ///
+  /// @return const reference to the joint acceleration estimates. 
+  ///
+  const Eigen::VectorXd& getJointAccelerationEstimate() const {
     return lpf_ddqJ_.getEstimate();
   }
 
-  const decltype(auto) getJointTorqueEstimate() const {
+  ///
+  /// @return const reference to the joint torque estimates. 
+  ///
+  const Eigen::VectorXd& getJointTorqueEstimate() const {
     return lpf_tauJ_.getEstimate();
   }
 
-  const decltype(auto) getContactForceEstimate() const {
+  ///
+  /// @return const reference to the conatct force estimates. 
+  ///
+  const std::vector<Eigen::Vector3d>& getContactForceEstimate() const {
     return contact_estimator_.getContactForceEstimate();
   }
 
-  const decltype(auto) getContactProbability() const {
+  ///
+  /// @return const reference to the conatct probabilities. 
+  ///
+  const std::vector<double>& getContactProbability() const {
     return contact_estimator_.getContactProbability();
   }
 

@@ -31,8 +31,8 @@ sim.init()
 for i in range(200):
     sim.step_simulation()
 
-base_pos, base_quat, base_lin_vel, base_ang_vel = sim.get_base_state()
-estimator.init(base_pos=base_pos, base_quat=base_quat, base_lin_vel=base_lin_vel,
+base_pos, base_quat, base_lin_vel_world, base_ang_vel_world = sim.get_base_state(coordinate='world')
+estimator.init(base_pos=base_pos, base_quat=base_quat, base_lin_vel_world=base_lin_vel_world,
                imu_gyro_bias=np.zeros(3), imu_lin_accel_bias=np.zeros(3))
 
 base_pos_true = []
@@ -108,10 +108,10 @@ for i in range(10000):
                      qJ=qJ, dqJ=dqJ, ddqJ=ddqJ, tauJ=tauJ, f=[0, 0, 0, 0])
     base_pos_est.append(estimator.base_position_estimate.copy())
     base_quat_est.append(estimator.base_quaternion_estimate.copy())
-    base_lin_vel_est.append(estimator.base_linear_velocity_estimate.copy())
-    base_ang_vel_est.append(estimator.base_angular_velocity_estimate.copy())
+    base_lin_vel_est.append(estimator.base_linear_velocity_estimate_local.copy())
+    base_ang_vel_est.append(estimator.base_angular_velocity_estimate_local.copy())
     # true state
-    base_pos, base_quat, base_lin_vel, base_ang_vel = sim.get_base_state()
+    base_pos, base_quat, base_lin_vel, base_ang_vel = sim.get_base_state(coordinate='local')
     base_pos_true.append(base_pos.copy())
     base_quat_true.append(base_quat.copy())
     base_lin_vel_true.append(base_lin_vel.copy())
@@ -122,8 +122,8 @@ for i in range(10000):
     diff = Rotation.from_matrix(R_true.T@estimator.base_rotation_estimate).as_quat()[0:3]
     print('base_pos error:', base_pos-estimator.base_position_estimate)
     print('base_rot error:', diff)
-    print('base_lin_vel error:', base_lin_vel-estimator.base_linear_velocity_estimate)
-    print('base_ang_vel error:', base_ang_vel-estimator.base_angular_velocity_estimate)
+    print('base_lin_vel error:', base_lin_vel-estimator.base_linear_velocity_estimate_local)
+    print('base_ang_vel error:', base_ang_vel-estimator.base_angular_velocity_estimate_local)
     print('contact_probability:', estimator.contact_probability)
 
     if len(base_pos_est) > PLT_WINDOW_SIZE:
