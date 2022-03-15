@@ -17,17 +17,17 @@ sim = a1_simulator.A1Simulator(PATH_TO_URDF, TIME_STEP,
                                ddqJ_noise=1.0, tauJ_noise=0.1)
 
 estimator_settings = legged_state_estimator.StateEstimatorSettings.a1_settings(PATH_TO_URDF, TIME_STEP)
-estimator_settings.contact_estimator_settings.beta0 = - 20.0
-estimator_settings.contact_estimator_settings.beta1 = 0.7
+estimator_settings.contact_estimator_settings.beta0 = [-20.0, -20.0, -20.0, -20.0]
+estimator_settings.contact_estimator_settings.beta1 = [0.7, 0.7, 0.7, 0.7]
+estimator_settings.contact_estimator_settings.contact_force_cov_alpha = 100.0
 estimator_settings.inekf_noise_params.contact_cov = 0.01 * np.eye(3, 3)
 estimator_settings.contact_position_noise = 0.1 
 estimator_settings.contact_rotation_noise = 0.1 
-estimator_settings.lpf_gyro_accel_cutoff = 150
-estimator_settings.lpf_lin_accel_cutoff  = 150
+estimator_settings.lpf_gyro_accel_cutoff = 250
+estimator_settings.lpf_lin_accel_cutoff  = 250
 estimator_settings.lpf_dqJ_cutoff  = 10
 estimator_settings.lpf_ddqJ_cutoff = 5
-# estimator_settings.lpf_tauJ_cutoff = 5
-estimator_settings.lpf_tauJ_cutoff = 50
+estimator_settings.lpf_tauJ_cutoff = 10
 estimator = legged_state_estimator.StateEstimator(estimator_settings)
 
 sim.init()
@@ -90,8 +90,8 @@ ax_ang_vel.set_title('Base angular velocity [rad/s]')
 
 ax_pos.set_ylim([-0.5, 0.5])
 ax_quat.set_ylim([-0.5, 1.2])
-ax_lin_vel.set_ylim([-2, 2])
-ax_ang_vel.set_ylim([-5, 5])
+ax_lin_vel.set_ylim([-1, 1])
+ax_ang_vel.set_ylim([-2, 2])
 
 ax_pos.legend(ncol=3)
 ax_quat.legend(ncol=4)

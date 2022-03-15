@@ -18,9 +18,10 @@
 namespace legged_state_estimator {
 
 struct ContactEstimatorSettings {
-  double beta0;
-  double beta1;
+  std::vector<double> beta0;
+  std::vector<double> beta1;
   std::vector<double> force_sensor_bias;
+  double contact_force_cov_alpha;
   SchmittTriggerSettings schmitt_trigger_settings;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -56,6 +57,8 @@ public:
 
   const std::vector<double>& getContactProbability() const;
 
+  double getContactForceCovariance(const double prob_threshold=0.5) const;
+
   const std::vector<double>& getForceSensorBias() const;
 
   const std::vector<Eigen::Vector3d>& getContactSurfaceNormal() const;
@@ -69,7 +72,9 @@ public:
 private:
   ContactEstimatorSettings settings_;
   std::vector<Eigen::Vector3d> contact_force_estimate_, contact_surface_normal_;
-  std::vector<double> contact_force_normal_estimate_, contact_probability_;
+  std::vector<double> contact_force_normal_estimate_, 
+                      contact_force_normal_estimate_prev_, 
+                      contact_probability_, contact_covariance_;
   std::vector<SchmittTrigger> schmitt_trigger_;
   int num_contacts_;
 };

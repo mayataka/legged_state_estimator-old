@@ -196,7 +196,7 @@ private:
   ContactEstimator contact_estimator_;
   LowPassFilter<double, Eigen::Dynamic> lpf_dqJ_, lpf_ddqJ_, lpf_tauJ_;
   LowPassFilter<double, 3> lpf_gyro_accel_world_, lpf_lin_accel_world_;
-  double dt_;
+  double dt_, contact_position_cov_, contact_rotation_cov_;
   Vector3d imu_gyro_raw_world_, imu_gyro_raw_world_prev_, imu_gyro_accel_world_, 
            imu_gyro_accel_local_, imu_lin_accel_raw_world_, imu_lin_accel_local_;
   Vector6d imu_raw_;

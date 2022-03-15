@@ -7,7 +7,9 @@ ContactEstimator::ContactEstimator(const Robot& robot,
                                    const ContactEstimatorSettings& settings)
   : settings_(settings),
     contact_force_normal_estimate_(robot.numContacts(), 0),
+    contact_force_normal_estimate_prev_(robot.numContacts(), 0),
     contact_probability_(robot.numContacts(), 0),
+    contact_covariance_(robot.numContacts(), 0),
     contact_force_estimate_(robot.numContacts(), Eigen::Vector3d::Zero()),
     contact_surface_normal_(robot.numContacts(), Eigen::Vector3d::Zero()),
     schmitt_trigger_(robot.numContacts(), 
@@ -22,7 +24,9 @@ ContactEstimator::ContactEstimator(const Robot& robot,
 ContactEstimator::ContactEstimator() 
   : settings_(),
     contact_force_normal_estimate_(),
+    contact_force_normal_estimate_prev_(),
     contact_probability_(),
+    contact_covariance_(),
     contact_force_estimate_(),
     contact_surface_normal_(),
     schmitt_trigger_(),
@@ -52,12 +56,18 @@ void ContactEstimator::update(const Robot& robot, const Eigen::VectorXd& tauJ,
   }
   // Contact probability 
   for (int i=0; i<num_contacts_; ++i) {
-    contact_probability_ [i]
-        = 1.0 / (1.0 + std::exp(- settings_.beta1 * contact_force_normal_estimate_[i]
-                                - settings_.beta0));
+    contact_probability_[i]
+        = 1.0 / (1.0 + std::exp(- settings_.beta1[i] * contact_force_normal_estimate_[i]
+                                - settings_.beta0[i]));
     if (std::isnan(contact_probability_[i]) || std::isinf(contact_probability_[i])) {
       contact_probability_[i] = 0;
     }
+  }
+  // Contact covariance
+  for (int i=0; i<num_contacts_; ++i) {
+    const double df = contact_force_normal_estimate_[i] - contact_force_normal_estimate_prev_[i];
+    contact_covariance_[i] = settings_.contact_force_cov_alpha * df * df;
+    contact_force_normal_estimate_prev_[i] = contact_force_normal_estimate_[i];;
   }
   // // Fuse force estimate and force sensor measurements
   // for (int i=0; i<num_contacts_; ++i) {
@@ -97,6 +107,27 @@ const std::vector<double>& ContactEstimator::getContactForceNormalEstimate() con
 
 const std::vector<double>& ContactEstimator::getContactProbability() const {
   return contact_probability_;
+}
+
+
+double ContactEstimator::getContactForceCovariance(const double prob_threshold) const {
+  int num_active_contacts = 0;
+  for (const auto e : getContactState(prob_threshold)) {
+    if (e.second) {
+      ++num_active_contacts;
+    }
+  }
+  double contact_force_cov = 0;
+  for (const auto e : contact_covariance_) {
+    contact_force_cov += e;
+  }
+  if (num_active_contacts > 0) {
+    contact_force_cov *= (1.0/num_active_contacts);
+  }
+  else {
+    contact_force_cov = 0;
+  }
+  return contact_force_cov;
 }
 
 

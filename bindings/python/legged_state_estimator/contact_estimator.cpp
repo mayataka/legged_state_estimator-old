@@ -17,6 +17,7 @@ PYBIND11_MODULE(contact_estimator, m) {
     .def_readwrite("beta0", &ContactEstimatorSettings::beta0)
     .def_readwrite("beta1", &ContactEstimatorSettings::beta1)
     .def_readwrite("force_sensor_bias", &ContactEstimatorSettings::force_sensor_bias)
+    .def_readwrite("contact_force_cov_alpha", &ContactEstimatorSettings::contact_force_cov_alpha)
     .def_readwrite("schmitt_trigger_settings", &ContactEstimatorSettings::schmitt_trigger_settings);
 
   py::class_<ContactEstimator>(m, "ContactEstimator")

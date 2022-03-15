@@ -15,6 +15,8 @@ StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
     lpf_ddqJ_(settings.dt, settings.lpf_ddqJ_cutoff, robot_.nJ()),
     lpf_tauJ_(settings.dt, settings.lpf_tauJ_cutoff, robot_.nJ()),
     dt_(settings.dt),
+    contact_position_cov_(settings.contact_position_noise*settings.contact_position_noise), 
+    contact_rotation_cov_(settings.contact_rotation_noise*settings.contact_rotation_noise),
     imu_gyro_raw_world_(Vector3d::Zero()), 
     imu_gyro_raw_world_prev_(Vector3d::Zero()), 
     imu_gyro_accel_world_(Vector3d::Zero()), 
@@ -24,10 +26,8 @@ StateEstimator::StateEstimator(const StateEstimatorSettings& settings)
     imu_raw_(Vector6d::Zero()),
     R_(Matrix3d::Identity()) {
   Matrix6d cov_leg = Matrix6d::Zero();
-  const double contact_position_cov = settings.contact_position_noise * settings.contact_position_noise; 
-  const double contact_rotation_cov = settings.contact_rotation_noise * settings.contact_rotation_noise; 
-  cov_leg.topLeftCorner<3, 3>() = contact_position_cov * Eigen::Matrix3d::Identity();
-  cov_leg.bottomRightCorner<3, 3>() = contact_rotation_cov * Eigen::Matrix3d::Identity();
+  cov_leg.topLeftCorner<3, 3>() = contact_position_cov_ * Eigen::Matrix3d::Identity();
+  cov_leg.bottomRightCorner<3, 3>() = contact_rotation_cov_ * Eigen::Matrix3d::Identity();
   for (int i=0; i<settings.contact_frames.size(); ++i) {
     inekf_leg_kinematics_.emplace_back(i, Eigen::Matrix4d::Identity(), cov_leg);
   }
@@ -105,9 +105,12 @@ void StateEstimator::update(const Eigen::Vector3d& imu_gyro_raw,
   robot_.updateLegDynamics(qJ, dqJ);
   contact_estimator_.update(robot_, lpf_tauJ_.getEstimate(), f_raw);
   inekf_.setContacts(contact_estimator_.getContactState());
+  const double contact_force_cov = contact_estimator_.getContactForceCovariance();
   for (int i=0; i<robot_.numContacts(); ++i) {
     inekf_leg_kinematics_[i].setContactPosition(
         robot_.getContactPosition(i)-robot_.getBasePosition());
+    inekf_leg_kinematics_[i].setContactPositionCovariance(
+        contact_force_cov*Eigen::Matrix3d::Identity());
   }
   // Process kinematics measurements in InEKF
   inekf_.CorrectKinematics(inekf_leg_kinematics_);

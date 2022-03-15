@@ -5,6 +5,7 @@ import numpy as np
 # design parameters
 beta0 = - 20.0
 beta1 = 0.7
+beta1 = 0.9
 fmax = 40.0
 
 
