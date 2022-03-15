@@ -19,21 +19,35 @@ PYBIND11_MODULE(robot, m) {
     .export_values();
 
   py::class_<Robot>(m, "Robot")
-    .def(py::init<const std::string&, const std::vector<int>&>(),
-          py::arg("path_to_urdf"), py::arg("contact_frames"))
-    .def(py::init<const std::string&, const std::vector<std::string>&>(),
-          py::arg("path_to_urdf"), py::arg("contact_frames"))
+    .def(py::init<const std::string&, const int, const std::vector<int>&>(),
+          py::arg("path_to_urdf"), py::arg("imu_frame"), py::arg("contact_frames"))
+    .def(py::init<const std::string&, const std::string&, const std::vector<std::string>&>(),
+          py::arg("path_to_urdf"), py::arg("imu_frame"), py::arg("contact_frames"))
     .def(py::init<>())
-    .def("update_leg_kinematics", &Robot::updateLegKinematics,
-          py::arg("qJ"), py::arg("dqJ"), 
+    .def("update_leg_kinematics", static_cast<void (Robot::*)(const Eigen::VectorXd&, 
+                                                              const pinocchio::ReferenceFrame)>(&Robot::updateLegKinematics),
+          py::arg("qJ"), py::arg("rf")=pinocchio::LOCAL_WORLD_ALIGNED)
+    .def("update_leg_kinematics", static_cast<void (Robot::*)(const Eigen::VectorXd&, const Eigen::VectorXd&, 
+                                                              const pinocchio::ReferenceFrame)>(&Robot::updateLegKinematics),
+          py::arg("qJ"), py::arg("dqJ"), py::arg("rf")=pinocchio::LOCAL_WORLD_ALIGNED)
+    .def("update_kinematics", static_cast<void (Robot::*)(const Eigen::VectorXd&, 
+                                                          const pinocchio::ReferenceFrame)>(&Robot::updateLegKinematics),
+          py::arg("qJ"), py::arg("rf")=pinocchio::LOCAL_WORLD_ALIGNED)
+    .def("update_kinematics", static_cast<void (Robot::*)(const Eigen::Vector3d&, const Eigen::Vector4d&, 
+                                                          const Eigen::VectorXd&,  
+                                                          const pinocchio::ReferenceFrame)>(&Robot::updateKinematics),
+          py::arg("base_pos"), py::arg("base_quat"), py::arg("qJ"),  
           py::arg("rf")=pinocchio::LOCAL_WORLD_ALIGNED)
-    .def("update_kinematics", &Robot::updateKinematics,
+    .def("update_kinematics", static_cast<void (Robot::*)(const Eigen::Vector3d&, const Eigen::Vector4d&, 
+                                                          const Eigen::Vector3d&, const Eigen::Vector3d&, 
+                                                          const Eigen::VectorXd&, const Eigen::VectorXd&,  
+                                                          const pinocchio::ReferenceFrame)>(&Robot::updateKinematics),
           py::arg("base_pos"), py::arg("base_quat"), 
           py::arg("base_linear_vel"), py::arg("base_angular_vel"), 
-          py::arg("qJ"), py::arg("dqJ"),
+          py::arg("qJ"), py::arg("dqJ"), 
           py::arg("rf")=pinocchio::LOCAL_WORLD_ALIGNED)
     .def("update_leg_dynamics", &Robot::updateLegDynamics,
-          py::arg("qJ"), py::arg("dqJ"), py::arg("ddqJ"))
+          py::arg("qJ"), py::arg("dqJ"))
     .def("update_dynamics", &Robot::updateDynamics,
           py::arg("base_pos"), py::arg("base_quat"), 
           py::arg("base_linear_vel"), py::arg("base_angular_vel"), 

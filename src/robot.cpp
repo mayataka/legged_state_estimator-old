@@ -3,9 +3,10 @@
 
 namespace legged_state_estimator {
 
-Robot::Robot(const std::string& path_to_urdf, 
+Robot::Robot(const std::string& path_to_urdf, const int imu_frame,
              const std::vector<int>& contact_frames) 
   : contact_frames_(contact_frames),
+    imu_frame_(imu_frame),
     model_(),
     data_(),
     q_(),
@@ -26,9 +27,10 @@ Robot::Robot(const std::string& path_to_urdf,
 }
 
 
-Robot::Robot(const std::string& path_to_urdf, 
+Robot::Robot(const std::string& path_to_urdf, const std::string& imu_frame,
              const std::vector<std::string>& contact_frames) 
   : contact_frames_(),
+    imu_frame_(),
     model_(),
     data_(),
     q_(),
@@ -46,6 +48,17 @@ Robot::Robot(const std::string& path_to_urdf,
   for (int i=0; i<contact_frames.size(); ++i) {
     jac_6d_.push_back(Eigen::MatrixXd::Zero(6, model_.nv));
   }
+  try {
+    if (!model_.existFrame(imu_frame)) {
+      throw std::invalid_argument(
+          "Invalid argument: frame " + imu_frame + " does not exit!");
+    }
+  }
+  catch(const std::exception& e) {
+    std::cerr << e.what() << '\n';
+    std::exit(EXIT_FAILURE);
+  }
+  imu_frame_ = model_.getFrameId(imu_frame);
   contact_frames_.clear();
   for (const auto& e : contact_frames) {
     try {
@@ -65,6 +78,7 @@ Robot::Robot(const std::string& path_to_urdf,
 
 Robot::Robot() 
   : contact_frames_(),
+    imu_frame_(),
     model_(),
     data_(),
     q_(),
@@ -79,12 +93,36 @@ Robot::~Robot() {}
 
 
 void Robot::updateLegKinematics(const Eigen::VectorXd& qJ, 
+                                const pinocchio::ReferenceFrame rf) {
+  updateKinematics(Eigen::Vector3d::Zero(), 
+                   Eigen::Quaterniond::Identity().coeffs(), qJ, rf);
+}
+
+
+void Robot::updateLegKinematics(const Eigen::VectorXd& qJ, 
                                 const Eigen::VectorXd& dqJ,
                                 const pinocchio::ReferenceFrame rf) {
   updateKinematics(Eigen::Vector3d::Zero(), 
                    Eigen::Quaterniond::Identity().coeffs(), 
                    Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), 
                    qJ, dqJ, rf);
+}
+
+
+void Robot::updateKinematics(const Eigen::Vector3d& base_pos, 
+                             const Eigen::Vector4d& base_quat, 
+                             const Eigen::VectorXd& qJ, 
+                             const pinocchio::ReferenceFrame rf) {
+  q_.template head<3>()     = base_pos;
+  q_.template segment<4>(3) = base_quat;
+  q_.tail(model_.nq-7) = qJ;
+  pinocchio::normalize(model_, q_);
+  pinocchio::forwardKinematics(model_, data_, q_);
+  pinocchio::updateFramePlacements(model_, data_);
+  pinocchio::computeJointJacobians(model_, data_, q_);
+  for (int i=0; i<contact_frames_.size(); ++i) {
+    pinocchio::getFrameJacobian(model_, data_, contact_frames_[i], rf, jac_6d_[i]);
+  }
 }
 
 
@@ -112,13 +150,12 @@ void Robot::updateKinematics(const Eigen::Vector3d& base_pos,
 
 
 void Robot::updateLegDynamics(const Eigen::VectorXd& qJ, 
-                              const Eigen::VectorXd& dqJ, 
-                              const Eigen::VectorXd& ddqJ) {
+                              const Eigen::VectorXd& dqJ) {
   updateDynamics(Eigen::Vector3d::Zero(), 
                  Eigen::Quaterniond::Identity().coeffs(), 
                  Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), 
                  Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), 
-                 qJ, dqJ, ddqJ);
+                 qJ, dqJ, Eigen::VectorXd::Zero(nJ()));
 }
 
 
@@ -145,12 +182,12 @@ void Robot::updateDynamics(const Eigen::Vector3d& base_pos,
 
 
 const Eigen::Vector3d& Robot::getBasePosition() const {
-  return data_.oMf[1].translation();
+  return data_.oMf[imu_frame_].translation();
 }
 
 
 const Eigen::Matrix3d& Robot::getBaseRotation() const {
-  return data_.oMf[1].rotation();
+  return data_.oMf[imu_frame_].rotation();
 }
 
 

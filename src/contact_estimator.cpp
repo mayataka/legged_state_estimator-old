@@ -41,7 +41,7 @@ void ContactEstimator::reset() {
 }
 
 
-void ContactEstimator::update(Robot& robot, const Eigen::VectorXd& tauJ, 
+void ContactEstimator::update(const Robot& robot, const Eigen::VectorXd& tauJ, 
                               const std::vector<double>& force_sensor_raw) {
   // Estimate contact force from robot dynamics 
   for (int i=0; i<num_contacts_; ++i) {

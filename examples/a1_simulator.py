@@ -3,6 +3,7 @@ import pybullet_data
 import numpy as np
 import time
 from scipy.spatial.transform import Rotation
+from sqlalchemy import true
 
 
 # imu_gyro_noise: 0.01 
@@ -46,6 +47,8 @@ class A1Simulator:
                                 0.0,  0.67, -1.3, 
                                 0.0,  0.67, -1.3])
         self.dqJ_prev = np.zeros(12)
+        self.torque_control_mode = False
+        self.tauJ = np.zeros(12)
 
     def set_urdf(self, path_to_urdf):
         self.path_to_urdf = path_to_urdf
@@ -78,6 +81,17 @@ class A1Simulator:
         pybullet.stepSimulation()
         time.sleep(self.time_step)
 
+    def print_joint_info(self):
+        pybullet.connect(pybullet.DIRECT)
+        robot = pybullet.loadURDF(self.path_to_urdf, 
+                                  useFixedBase=False, 
+                                  useMaximalCoordinates=False)
+        nJoints = pybullet.getNumJoints(robot)
+        for j in range(nJoints):
+            info = pybullet.getJointInfo(robot, j)
+            print(info)
+        pybullet.disconnect()
+
     def get_base_state(self, coordinate='local'):
         base_pos, base_orn = pybullet.getBasePositionAndOrientation(self.robot)
         if coordinate == 'local':
@@ -98,16 +112,16 @@ class A1Simulator:
         R = Rotation.from_quat(base_orn).as_matrix()
         base_lin_acc_local = R.T @ base_lin_acc_world
         self.base_lin_vel_world_prev = base_lin_vel_world.copy()
-        _, _, _, base_ang_vel_local = self.get_base_state('local')
+        base_pos, base_orn, base_lin_vel_local, base_ang_vel_local = self.get_base_state('local')
         base_ang_vel_noise = np.random.normal(0, self.imu_gyro_noise, 3) 
         base_lin_acc_noise = np.random.normal(0, self.imu_lin_accel_noise, 3) 
-        self.imu_gyro_bias = self.imu_gyro_bias + np.random.normal(0, self.imu_gyro_bias_noise, 3)
+        self.imu_gyro_bias  = self.imu_gyro_bias + np.random.normal(0, self.imu_gyro_bias_noise, 3)
         self.imu_accel_bias = self.imu_accel_bias + np.random.normal(0, self.imu_lin_accel_bias_noise, 3)
         base_ang_vel_local = base_ang_vel_local + base_ang_vel_noise + self.imu_gyro_bias
         base_lin_acc_local = base_lin_acc_local + base_lin_acc_noise + self.imu_accel_bias
         return base_ang_vel_local.copy(), base_lin_acc_local.copy()
 
-    def get_joint_state(self):
+    def get_joint_state(self, noise=True):
         # joint angles
         qJ = np.zeros(12)
         # FL
@@ -123,7 +137,7 @@ class A1Simulator:
         qJ[7] = pybullet.getJointState(self.robot, 19)[0]
         qJ[8] = pybullet.getJointState(self.robot, 20)[0]
         # RH
-        qJ[9] = pybullet.getJointState(self.robot, 12)[0]
+        qJ[9]  = pybullet.getJointState(self.robot, 12)[0]
         qJ[10] = pybullet.getJointState(self.robot, 14)[0]
         qJ[11] = pybullet.getJointState(self.robot, 15)[0]
         # joint velocities
@@ -141,41 +155,52 @@ class A1Simulator:
         dqJ[7] = pybullet.getJointState(self.robot, 19)[1]
         dqJ[8] = pybullet.getJointState(self.robot, 20)[1]
         # RH
-        dqJ[9] = pybullet.getJointState(self.robot, 12)[1]
+        dqJ[9]  = pybullet.getJointState(self.robot, 12)[1]
         dqJ[10] = pybullet.getJointState(self.robot, 14)[1]
         dqJ[11] = pybullet.getJointState(self.robot, 15)[1]
         # joint torques
         tauJ = np.zeros(12)
-        tauJ[0] = pybullet.getJointState(self.robot, 7)[3]
-        tauJ[1] = pybullet.getJointState(self.robot, 9)[3]
-        tauJ[2] = pybullet.getJointState(self.robot, 10)[3]
+        tauJ[0] = pybullet.getJointState(self.robot, 7)[3] 
+        tauJ[1] = pybullet.getJointState(self.robot, 9)[3] 
+        tauJ[2] = pybullet.getJointState(self.robot, 10)[3] 
         # FR
-        tauJ[3] = pybullet.getJointState(self.robot, 2)[3]
-        tauJ[4] = pybullet.getJointState(self.robot, 4)[3]
-        tauJ[5] = pybullet.getJointState(self.robot, 5)[3]
+        tauJ[3] = pybullet.getJointState(self.robot, 2)[3] 
+        tauJ[4] = pybullet.getJointState(self.robot, 4)[3] 
+        tauJ[5] = pybullet.getJointState(self.robot, 5)[3] 
         # RF
-        tauJ[6] = pybullet.getJointState(self.robot, 17)[3]
-        tauJ[7] = pybullet.getJointState(self.robot, 19)[3]
-        tauJ[8] = pybullet.getJointState(self.robot, 20)[3]
+        tauJ[6] = pybullet.getJointState(self.robot, 17)[3] 
+        tauJ[7] = pybullet.getJointState(self.robot, 19)[3] 
+        tauJ[8] = pybullet.getJointState(self.robot, 20)[3] 
         # RH
-        tauJ[9] = pybullet.getJointState(self.robot, 12)[3]
-        tauJ[10] = pybullet.getJointState(self.robot, 14)[3]
-        tauJ[11] = pybullet.getJointState(self.robot, 15)[3]
+        tauJ[9]  = pybullet.getJointState(self.robot, 12)[3] 
+        tauJ[10] = pybullet.getJointState(self.robot, 14)[3] 
+        tauJ[11] = pybullet.getJointState(self.robot, 15)[3] 
+        if self.torque_control_mode:
+            tauJ = self.tauJ.copy()
         ddqJ = (dqJ - self.dqJ_prev) / self.time_step
         self.dqJ_prev = dqJ.copy()
-        qJ_noise = np.random.normal(0, self.qJ_noise, 12) 
-        dqJ_noise = np.random.normal(0, self.dqJ_noise, 12) 
-        ddqJ_noise = np.random.normal(0, self.ddqJ_noise, 12) 
-        tauJ_noise = np.random.normal(0, self.tauJ_noise, 12) 
-        qJ = qJ + qJ_noise
-        dqJ = dqJ + dqJ_noise
-        ddqJ = ddqJ + ddqJ_noise
-        tauJ = tauJ + tauJ_noise
+        if noise:
+            qJ_noise = np.random.normal(0, self.qJ_noise, 12) 
+            dqJ_noise = np.random.normal(0, self.dqJ_noise, 12) 
+            ddqJ_noise = np.random.normal(0, self.ddqJ_noise, 12) 
+            tauJ_noise = np.random.normal(0, self.tauJ_noise, 12) 
+            qJ = qJ + qJ_noise
+            dqJ = dqJ + dqJ_noise
+            ddqJ = ddqJ + ddqJ_noise
+            tauJ = tauJ + tauJ_noise
         return qJ, dqJ, ddqJ, tauJ
 
     def apply_torque_command(self, tauJ):
+        self.torque_control_mode = True
+        self.tauJ = tauJ.copy()
+        # turn off position and velocity controls
+        joints = [7, 9, 10, 2, 4, 5, 17, 19, 20, 12, 14, 15]
+        for e in joints:
+            pybullet.setJointMotorControl2(self.robot, e, controlMode=pybullet.VELOCITY_CONTROL, force=0.)
+            pybullet.setJointMotorControl2(self.robot, e, controlMode=pybullet.POSITION_CONTROL, force=0.)
+        # apply torque control
         mode = pybullet.TORQUE_CONTROL
-        # LFL
+        # FL
         pybullet.setJointMotorControl2(self.robot, 7, controlMode=mode, force=tauJ[0])
         pybullet.setJointMotorControl2(self.robot, 9, controlMode=mode, force=tauJ[1])
         pybullet.setJointMotorControl2(self.robot, 10, controlMode=mode, force=tauJ[2])
@@ -193,11 +218,12 @@ class A1Simulator:
         pybullet.setJointMotorControl2(self.robot, 15, controlMode=mode, force=tauJ[11])
 
     def apply_position_command(self, qJ):
+        self.torque_control_mode = False
         mode = pybullet.POSITION_CONTROL
         maxForce = 30
         Kp = 0.1
         Kd = 0.0001
-        # LFL
+        # FL
         pybullet.setJointMotorControl2(self.robot, 7, controlMode=mode, targetPosition=qJ[0], positionGain=Kp, force=maxForce)
         pybullet.setJointMotorControl2(self.robot, 9, controlMode=mode, targetPosition=qJ[1], positionGain=Kp, force=maxForce)
         pybullet.setJointMotorControl2(self.robot, 10, controlMode=mode, targetPosition=qJ[2], positionGain=Kp, force=maxForce)

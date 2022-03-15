@@ -43,7 +43,7 @@ public:
 
   void reset();
 
-  void update(Robot& robot, const Eigen::VectorXd& tauJ, 
+  void update(const Robot& robot, const Eigen::VectorXd& tauJ, 
               const std::vector<double>& force_sensor_raw);
 
   void setParameters(const ContactEstimatorSettings& settings);

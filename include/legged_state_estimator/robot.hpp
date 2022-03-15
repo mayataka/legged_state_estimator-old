@@ -32,19 +32,23 @@ public:
   /// @brief Constructs a robot model. Builds the Pinocchio robot model and data 
   /// from URDF. Assumes that the robot never has any contacts.
   /// @param[in] path_to_urdf Path to the URDF file.
+  /// @param[in] imu_frames id of the IMU frame.
   /// @param[in] contact_frames Collection of the id of frames that can have 
   /// contacts with the environments. 
   ///
-  Robot(const std::string& path_to_urdf, const std::vector<int>& contact_frames);
+  Robot(const std::string& path_to_urdf, const int imu_frame, 
+        const std::vector<int>& contact_frames);
 
   ///
   /// @brief Constructs a robot model. Builds the Pinocchio robot model and data 
   /// from URDF. Assumes that the robot never has any contacts.
   /// @param[in] path_to_urdf Path to the URDF file.
+  /// @param[in] imu_frames Name of the IMU frame.
   /// @param[in] contact_frames Collection of the names of frames that can have 
   /// contacts with the environments. 
   ///
-  Robot(const std::string& path_to_urdf, const std::vector<std::string>& contact_frames);
+  Robot(const std::string& path_to_urdf, const std::string& imu_frame, 
+        const std::vector<std::string>& contact_frames);
 
   ///
   /// @brief Default constructor. 
@@ -64,12 +68,34 @@ public:
   ///
   /// @brief Updates leg kinemarics.
   /// @param[in] qJ Joint positions. Size must be Robot::nJ().
+  /// @param[in] rf Reference frame of the kinematics. Default is 
+  /// pinocchio::LOCAL_WORLD_ALIGNED.
+  ///
+  void updateLegKinematics(const Eigen::VectorXd& qJ,
+                           const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED);
+
+  ///
+  /// @brief Updates leg kinemarics.
+  /// @param[in] qJ Joint positions. Size must be Robot::nJ().
   /// @param[in] dqJ Joint velocities. Size must be Robot::nJ().
   /// @param[in] rf Reference frame of the kinematics. Default is 
   /// pinocchio::LOCAL_WORLD_ALIGNED.
   ///
   void updateLegKinematics(const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ,
                            const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED);
+
+  ///
+  /// @brief Updates kinemarics.
+  /// @param[in] base_pos Base position. 
+  /// @param[in] base_quat Base orientation expressed by quaternion (x, y, z, w). 
+  /// @param[in] qJ Joint positions. Size must be Robot::nJ().
+  /// @param[in] rf Reference frame of the kinematics. Default is 
+  /// pinocchio::LOCAL_WORLD_ALIGNED.
+  ///
+  void updateKinematics(const Eigen::Vector3d& base_pos, 
+                        const Eigen::Vector4d& base_quat, 
+                        const Eigen::VectorXd& qJ, 
+                        const pinocchio::ReferenceFrame rf=pinocchio::LOCAL_WORLD_ALIGNED);
 
   ///
   /// @brief Updates kinemarics.
@@ -95,10 +121,8 @@ public:
   /// @brief Updates leg dynamics.
   /// @param[in] qJ Joint positions. Size must be Robot::nJ().
   /// @param[in] dqJ Joint velocities. Size must be Robot::nJ().
-  /// @param[in] ddqJ Joint accelerations. Size must be Robot::nJ().
   ///
-  void updateLegDynamics(const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ, 
-                         const Eigen::VectorXd& ddqJ);
+  void updateLegDynamics(const Eigen::VectorXd& qJ, const Eigen::VectorXd& dqJ);
 
   ///
   /// @brief Updates dynamics.
@@ -203,6 +227,7 @@ private:
   pinocchio::Data data_;
   Eigen::VectorXd q_, v_, a_, tau_;
   std::vector<Eigen::MatrixXd, Eigen::aligned_allocator<Eigen::MatrixXd>> jac_6d_;
+  int imu_frame_;
   std::vector<int> contact_frames_;
 
 };

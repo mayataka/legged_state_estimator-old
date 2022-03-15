@@ -133,8 +133,8 @@ public:
   /// @return const reference to the base angular velocity estimate expressed in 
   /// the local frame.
   ///
-  const Eigen::VectorBlock<const Vector6d, 3> getBaseAngularVelocityEstimateLocal() const {
-    return imu_raw_.template head<3>();
+  Eigen::Vector3d getBaseAngularVelocityEstimateLocal() const {
+    return (imu_raw_.template head<3>() - getIMUGyroBiasEstimate());
   }
 
   ///
