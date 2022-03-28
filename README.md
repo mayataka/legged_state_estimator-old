@@ -1,3 +1,7 @@
+## The content of this repository has been integrated into https://github.com/mayataka/inekf 
+
+----------------------------
+
 # Introduction
 This is a state estimator for legged robots using [Invariant EKF estimation](https://github.com/RossHartley/invariant-ekf) with leg odometry in which the robot dynamics and kinematics are computed via [Pinocchio](https://github.com/stack-of-tasks/pinocchio)
 
